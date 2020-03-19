@@ -32,14 +32,15 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 	// Number of pseudo-experiment per mu value
 	Ntoys := 100000
 
-	// Get B-only expectaction and associated toys
+	// Get B-only expectation and associated toys
 	model_Bonly := modelPrediction(bkg, sig, 0.0)
 	pseudodata_Bonly := make([][]float64, Ntoys)
 	for i := range pseudodata_Bonly {
 		pseudodata_Bonly[i] = createPseudodata(model_Bonly)
 	}
 
-	// Start to loop over mu values
+
+	// Prepare the loop over mu values
 	nPOI := 20
 
 	POI = floats.Span(make([]float64, nPOI), 0, 1.9)
@@ -51,8 +52,12 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 		nllr_b  = make([]float64, Ntoys)
 	)
 
+	// Start to loop over mu values
 	for i := range POI {
 
+		// Print 
+		fmt.Println("Toys for mu = ", POI[i])
+		
 		// Get S+B expectations
 		mu := POI[i]
 		model_SB := modelPrediction(bkg, sig, mu)
@@ -104,9 +109,9 @@ func createPseudodata(model []float64) []float64 {
 
 func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
 	var (
-		f    = func(x float64) bool { return x >= ref }
-		Nsb  = floats.Count(f, nllr_sb)
-		Nb   = floats.Count(f, nllr_b)
+		cut  = func(x float64) bool { return x >= ref }
+		Nsb  = floats.Count(cut, nllr_sb)
+		Nb   = floats.Count(cut, nllr_b)
 		CLsb = float64(Nsb) / float64(len(nllr_sb))
 		CLb  = float64(Nb) / float64(len(nllr_b))
 	)
