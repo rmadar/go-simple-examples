@@ -53,9 +53,9 @@ func create_pseudodata(model []float64) []float64 {
 func main(){
 
 	// Expectation and observation
-	obs := []float64 {102, 135, 132, 125, 108};
-	bkg := []float64 {100, 140, 130, 120, 110};
-	sig := []float64 { 10,  35,  50,  35,   5};
+	obs := []float64 {102, 135, 132, 125, 108}
+	bkg := []float64 {100, 140, 130, 120, 110}
+	sig := []float64 { 10,  35,  50,  35,   5}; _ = sig
 	
 	// Compute and print the likelihood for pseudo-data
 	Ntoys := 10
@@ -65,6 +65,6 @@ func main(){
 	}
 
 	// Compute and print the likelihood for observed data
-	fmt.Println("LH(obs)", likelihood(obs, exp))
+	fmt.Println("LH(obs)", likelihood(obs, bkg))
 }
 
