@@ -26,55 +26,6 @@ func main() {
 	}
 }
 
-func filterSlice(x []float64, condition func(float64) bool) []float64 {
-	res := make([]float64, 0)
-	for _, val := range x {
-		if condition(val) {
-			res = append(res, val)
-		}
-	}
-	return res
-}
-
-func modelPrediction(bkg, sig []float64, mu float64) []float64 {
-	prediction := make([]float64, len(bkg))
-	for i := 0; i < len(bkg); i++ {
-		prediction[i] = bkg[i] + mu*sig[i]
-	}
-	return prediction
-}
-
-func likelihood(data, model []float64) float64 {
-	var LH float64 = 1.0
-	for i, v := range data {
-		LH *= distuv.Poisson{Lambda: model[i]}.Prob(v)
-	}
-	return LH
-}
-
-func NLLR(data, model1, model2 []float64) float64 {
-	L_hyp1 := likelihood(data, model1)
-	L_hyp2 := likelihood(data, model2)
-	return -2 * math.Log(L_hyp1/L_hyp2)
-}
-
-func createPseudodata(model []float64) []float64 {
-	pseudo_data := make([]float64, len(model))
-	for ib := 0; ib < len(model); ib++ {
-		pseudo_data[ib] = distuv.Poisson{Lambda: model[ib]}.Rand()
-	}
-	return pseudo_data
-}
-
-func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
-	condition := func(x float64) bool { return x >= ref }
-	Nsb := len(filterSlice(nllr_sb, condition))
-	Nb := len(filterSlice(nllr_b, condition))
-	CLsb := float64(Nsb) / float64(len(nllr_sb))
-	CLb := float64(Nb) / float64(len(nllr_b))
-	return CLsb / CLb
-}
-
 func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) {
 
 	// Number of pseudo-experiment per mu value
@@ -111,4 +62,53 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 	}
 
 	return POI, CLs_exp, CLs_obs
+}
+
+func modelPrediction(bkg, sig []float64, mu float64) []float64 {
+	prediction := make([]float64, len(bkg))
+	for i := 0; i < len(bkg); i++ {
+		prediction[i] = bkg[i] + mu*sig[i]
+	}
+	return prediction
+}
+
+func NLLR(data, model1, model2 []float64) float64 {
+	L_hyp1 := likelihood(data, model1)
+	L_hyp2 := likelihood(data, model2)
+	return -2 * math.Log(L_hyp1/L_hyp2)
+}
+
+func likelihood(data, model []float64) float64 {
+	var LH float64 = 1.0
+	for i, v := range data {
+		LH *= distuv.Poisson{Lambda: model[i]}.Prob(v)
+	}
+	return LH
+}
+
+func createPseudodata(model []float64) []float64 {
+	pseudo_data := make([]float64, len(model))
+	for ib := 0; ib < len(model); ib++ {
+		pseudo_data[ib] = distuv.Poisson{Lambda: model[ib]}.Rand()
+	}
+	return pseudo_data
+}
+
+func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
+	condition := func(x float64) bool { return x >= ref }
+	Nsb := len(filterSlice(nllr_sb, condition))
+	Nb := len(filterSlice(nllr_b, condition))
+	CLsb := float64(Nsb) / float64(len(nllr_sb))
+	CLb := float64(Nb) / float64(len(nllr_b))
+	return CLsb / CLb
+}
+
+func filterSlice(x []float64, condition func(float64) bool) []float64 {
+	res := make([]float64, 0)
+	for _, val := range x {
+		if condition(val) {
+			res = append(res, val)
+		}
+	}
+	return res
 }
