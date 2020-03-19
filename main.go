@@ -105,20 +105,10 @@ func createPseudodata(model []float64) []float64 {
 func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
 	condition := func(x float64) bool { return x >= ref }
 	var (
-		Nsb  = len(filterSlice(nllr_sb, condition))
-		Nb   = len(filterSlice(nllr_b, condition))
+		Nsb  = floats.Count(condition, nllr_sb)
+		Nb   = floats.Count(condition, nllr_b)
 		CLsb = float64(Nsb) / float64(len(nllr_sb))
 		CLb  = float64(Nb) / float64(len(nllr_b))
 	)
 	return CLsb / CLb
-}
-
-func filterSlice(x []float64, condition func(float64) bool) []float64 {
-	res := make([]float64, 0, len(x))
-	for _, val := range x {
-		if condition(val) {
-			res = append(res, val)
-		}
-	}
-	return res
 }
