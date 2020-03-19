@@ -103,10 +103,10 @@ func createPseudodata(model []float64) []float64 {
 }
 
 func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
-	condition := func(x float64) bool { return x >= ref }
 	var (
-		Nsb  = floats.Count(condition, nllr_sb)
-		Nb   = floats.Count(condition, nllr_b)
+		f    = func(x float64) bool { return x >= ref }
+		Nsb  = floats.Count(f, nllr_sb)
+		Nb   = floats.Count(f, nllr_b)
 		CLsb = float64(Nsb) / float64(len(nllr_sb))
 		CLb  = float64(Nb) / float64(len(nllr_b))
 	)
