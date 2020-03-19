@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/stat"
 	"gonum.org/v1/gonum/stat/distuv"
 )
@@ -40,9 +41,8 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 
 	// Start to loop over mu values
 	nPOI := 20
-	POI_start, POI_end := 0.0, 2.0
 
-	POI = make([]float64, nPOI)
+	POI = floats.Span(make([]float64, nPOI), 0, 1.9)
 	CLs_exp = make([]float64, nPOI)
 	CLs_obs = make([]float64, nPOI)
 
@@ -54,8 +54,7 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 	for i := range POI {
 
 		// Get S+B expectations
-		mu := POI_start + (POI_end-POI_start)/float64(nPOI)*float64(i)
-		POI[i] = mu
+		mu := POI[i]
 		model_SB := modelPrediction(bkg, sig, mu)
 
 		// Get observed nllr for this assumed POI value
