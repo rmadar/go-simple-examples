@@ -33,32 +33,41 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 
 	// Get B-only expectaction and associated toys
 	model_Bonly := modelPrediction(bkg, sig, 0.0)
-	pseudodata_Bonly := make([][]float64, 0)
-	for i := 0; i < Ntoys; i++ {
-		pseudodata_Bonly = append(pseudodata_Bonly, createPseudodata(model_Bonly))
+	pseudodata_Bonly := make([][]float64, Ntoys)
+	for i := range pseudodata_Bonly {
+		pseudodata_Bonly[i] = createPseudodata(model_Bonly)
 	}
 
 	// Start to loop over mu values
 	nPOI := 20
 	POI_start, POI_end := 0.0, 2.0
-	for iPOI := 0; iPOI < nPOI; iPOI++ {
+
+	POI = make([]float64, nPOI)
+	CLs_exp = make([]float64, nPOI)
+	CLs_obs = make([]float64, nPOI)
+
+	var (
+		nllr_sb = make([]float64, Ntoys)
+		nllr_b  = make([]float64, Ntoys)
+	)
+
+	for i := range POI {
 
 		// Get S+B expectations
-		mu := POI_start + (POI_end-POI_start)/float64(nPOI)*float64(iPOI)
-		POI = append(POI, mu)
+		mu := POI_start + (POI_end-POI_start)/float64(nPOI)*float64(i)
+		POI[i] = mu
 		model_SB := modelPrediction(bkg, sig, mu)
 
 		// Get observed nllr for this assumed POI value
 		nllr_obs := NLLR(obs, model_SB, model_Bonly)
 
 		// Draw some toys to get PDF(nllr|S+B) and PDF(nllr|B)
-		var nllr_sb, nllr_b []float64
-		for i := 0; i < Ntoys; i++ {
-			nllr_sb = append(nllr_sb, NLLR(createPseudodata(model_SB), model_SB, model_Bonly))
-			nllr_b = append(nllr_b, NLLR(pseudodata_Bonly[i], model_SB, model_Bonly))
+		for j := range nllr_sb {
+			nllr_sb[j] = NLLR(createPseudodata(model_SB), model_SB, model_Bonly)
+			nllr_b[j] = NLLR(pseudodata_Bonly[j], model_SB, model_Bonly)
 		}
-		CLs_exp = append(CLs_exp, computeCLs(nllr_sb, nllr_b, stat.Mean(nllr_b, nil)))
-		CLs_obs = append(CLs_obs, computeCLs(nllr_sb, nllr_b, nllr_obs))
+		CLs_exp[i] = computeCLs(nllr_sb, nllr_b, stat.Mean(nllr_b, nil))
+		CLs_obs[i] = computeCLs(nllr_sb, nllr_b, nllr_obs)
 	}
 
 	return POI, CLs_exp, CLs_obs
@@ -66,7 +75,7 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 
 func modelPrediction(bkg, sig []float64, mu float64) []float64 {
 	prediction := make([]float64, len(bkg))
-	for i := 0; i < len(bkg); i++ {
+	for i := range prediction {
 		prediction[i] = bkg[i] + mu*sig[i]
 	}
 	return prediction
@@ -79,7 +88,7 @@ func NLLR(data, model1, model2 []float64) float64 {
 }
 
 func likelihood(data, model []float64) float64 {
-	var LH float64 = 1.0
+	LH := 1.0
 	for i, v := range data {
 		LH *= distuv.Poisson{Lambda: model[i]}.Prob(v)
 	}
@@ -88,23 +97,25 @@ func likelihood(data, model []float64) float64 {
 
 func createPseudodata(model []float64) []float64 {
 	pseudo_data := make([]float64, len(model))
-	for ib := 0; ib < len(model); ib++ {
-		pseudo_data[ib] = distuv.Poisson{Lambda: model[ib]}.Rand()
+	for i := range pseudo_data {
+		pseudo_data[i] = distuv.Poisson{Lambda: model[i]}.Rand()
 	}
 	return pseudo_data
 }
 
 func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
 	condition := func(x float64) bool { return x >= ref }
-	Nsb := len(filterSlice(nllr_sb, condition))
-	Nb := len(filterSlice(nllr_b, condition))
-	CLsb := float64(Nsb) / float64(len(nllr_sb))
-	CLb := float64(Nb) / float64(len(nllr_b))
+	var (
+		Nsb  = len(filterSlice(nllr_sb, condition))
+		Nb   = len(filterSlice(nllr_b, condition))
+		CLsb = float64(Nsb) / float64(len(nllr_sb))
+		CLb  = float64(Nb) / float64(len(nllr_b))
+	)
 	return CLsb / CLb
 }
 
 func filterSlice(x []float64, condition func(float64) bool) []float64 {
-	res := make([]float64, 0)
+	res := make([]float64, 0, len(x))
 	for _, val := range x {
 		if condition(val) {
 			res = append(res, val)
