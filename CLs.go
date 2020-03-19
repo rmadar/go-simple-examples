@@ -90,7 +90,7 @@ func compute_CLs_vs_POI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float6
 		var nllr_sb, nllr_b []float64;
 		for i:=0 ; i<Ntoys ; i++ {
 			nllr_sb = append(nllr_sb, NLLR(create_pseudodata(model_SB), model_SB, model_Bonly))
-			nllr_b  = append(nllr_b , NLLR(create_pseudodata(model_Bonly), model_SB, model_Bonly))
+			nllr_b  = append(nllr_b , NLLR(pseudodata_Bonly[i], model_SB, model_Bonly))
 		}
 		CLs_exp = append(CLs_exp, compute_CLs(nllr_sb, nllr_b, stat.Mean(nllr_b , nil)))
 		CLs_obs = append(CLs_obs, compute_CLs(nllr_sb, nllr_b, nllr_obs))
