@@ -7,6 +7,11 @@ import (
 	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/stat"
 	"gonum.org/v1/gonum/stat/distuv"
+	
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 )
 
 func main() {
@@ -19,12 +24,8 @@ func main() {
 	// Run the CLs computation for these background, signal and observations
 	POI, CLs_exp, CLs_obs := computeCLsVsPOI(bkg, sig, obs)
 
-	// Print the results
-	for i, mu := range POI {
-		fmt.Println("\nmu =", mu)
-		fmt.Println("  -> CLs[exp] =", CLs_exp[i])
-		fmt.Println("  -> CLs[obs] =", CLs_obs[i])
-	}
+	// Plot CLs versus mu
+	plotCLsVsPOI(POI, CLs_exp, CLs_obs)
 }
 
 func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) {
@@ -56,7 +57,7 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 	for i := range POI {
 
 		// Print 
-		fmt.Println("Toys for mu = ", POI[i])
+		fmt.Println("POI scan: ", float64(i)/float64(nPOI)*100, "%")
 		
 		// Get S+B expectations
 		mu := POI[i]
@@ -116,4 +117,28 @@ func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
 		CLb  = float64(Nb) / float64(len(nllr_b))
 	)
 	return CLsb / CLb
+}
+
+func plotCLsVsPOI(POI, CLs_exp, CLs_obs []float64){
+	var (
+		p, _ = plot.New()
+		pts_exp = make(plotter.XYs, len(POI))
+		pts_obs = make(plotter.XYs, len(POI))
+	)
+
+	p.Title.Text   = "Stat-only Exclusion"
+	p.X.Label.Text = "POI value"
+	p.Y.Label.Text = "CLs"
+	
+	for i := range POI {
+		pts_exp[i].X, pts_obs[i].X = POI[i], POI[i]
+		pts_exp[i].Y = CLs_exp[i]
+		pts_obs[i].Y = CLs_obs[i]
+	}
+
+	plotutil.AddLinePoints(p,
+		"Expected", pts_exp,
+		"Observed", pts_obs)
+	
+	p.Save(4*vg.Inch, 4*vg.Inch, "CLs.pdf")
 }
