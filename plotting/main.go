@@ -25,12 +25,12 @@ func main() {
 
 	// Define variable to be plotted
 	var (
-		n  = 100 
+		n  = 100
 		x  = floats.Span(make([]float64, n), 0, 10)
-		f1 = func(x float64) (y float64) { return math.Sin(x+5.) }
-		f2 = func(x float64) (y float64) { return x+10. }
+		f1 = func(x float64) (y float64) { return math.Sin(x + 5.) }
+		f2 = func(x float64) (y float64) { return x + 10. }
 	)
-	
+
 	// Use the plotutil package
 	plotutil.AddLinePoints(p,
 		"y = f1(x)", getPoints(x, f1),
@@ -43,10 +43,11 @@ func main() {
 	}
 }
 
-func getPoints(x []float64, f func(float64) float64) plotter.XYs {
-	pts := make(plotter.XYs, len(x))
-	for i, X := range x {
-		pts[i].X, pts[i].Y = X, f(X)
+func getPoints(xs []float64, f func(float64) float64) plotter.XYs {
+	pts := make(plotter.XYs, len(xs))
+	for i, x := range xs {
+		pts[i].X = x
+		pts[i].Y = f(x)
 	}
 	return pts
 }
