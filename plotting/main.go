@@ -1,10 +1,11 @@
 package main
 
 import (
+	"log"
 	"math"
-	
+
 	"gonum.org/v1/gonum/floats"
-	
+
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
@@ -14,8 +15,11 @@ import (
 func main() {
 
 	// Create a plot object
-	p, _ := plot.New()
-	p.Title.Text   = "Plotutil example"
+	p, err := plot.New()
+	if err != nil {
+		log.Fatalf("could not create plot: %+v", err)
+	}
+	p.Title.Text = "Plotutil example"
 	p.X.Label.Text = "X"
 	p.Y.Label.Text = "Y"
 
@@ -33,7 +37,10 @@ func main() {
 		"y = f2(x)", getPoints(x, f2))
 	
 	// Save the plot to a PDF file.
-	p.Save(4*vg.Inch, 4*vg.Inch, "points.pdf")
+	err = p.Save(4*vg.Inch, 4*vg.Inch, "points.pdf")
+	if err != nil {
+		log.Fatalf("could not save plot: %+v", err)
+	}
 }
 
 func getPoints(x []float64, f func(float64) float64) plotter.XYs {
