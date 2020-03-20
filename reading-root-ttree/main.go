@@ -19,7 +19,7 @@ func main() {
 	eventLoop(fname, tname, evtmax)
 }
 
-type Event struct {
+type PartonEvent struct {
 	t Particles
 	b Particles
 	W Particles
@@ -35,6 +35,16 @@ type Particles struct {
 	pid []float32
 }
 
+type SpinObservables struct {
+	dphi_ll []float32
+	cos_km []float32
+	cos_kp []float32
+	cos_rm []float32
+	cos_rp []float32
+	cos_nm []float32
+	cos_np []float32
+}
+
 // Event loop
 func eventLoop(fname string, tname string, evtmax int64) {
 
@@ -44,30 +54,14 @@ func eventLoop(fname string, tname string, evtmax int64) {
 	tree := getTtree(file, tname)
 	
 	// Event and variables to load
-	var e Event
-	vars := []rtree.ScanVar{
-		{Name: "t_pt", Value: &e.t.pt},
-		{Name: "t_eta", Value: &e.t.eta},
-		{Name: "t_phi", Value: &e.t.phi},
-		{Name: "t_pid", Value: &e.t.pid},
-		{Name: "b_pt", Value: &e.b.pt},
-		{Name: "b_eta", Value: &e.b.eta},
-		{Name: "b_phi", Value: &e.b.phi},
-		{Name: "b_pid", Value: &e.b.pid},
-		{Name: "W_pt", Value: &e.W.pt},
-		{Name: "W_eta", Value: &e.W.eta},
-		{Name: "W_phi", Value: &e.W.phi},
-		{Name: "W_pid", Value: &e.W.pid},
-		{Name: "l_pt", Value: &e.l.pt},
-		{Name: "l_eta", Value: &e.l.eta},
-		{Name: "l_phi", Value: &e.l.phi},
-		{Name: "l_pid", Value: &e.l.pid},
-		{Name: "v_pt", Value: &e.v.pt},
-		{Name: "v_eta", Value: &e.v.eta},
-		{Name: "v_phi", Value: &e.v.phi},
-		{Name: "v_pid", Value: &e.v.pid},
-	}		
-
+	var (
+		e_partons PartonEvent
+		e_spin_obs SpinObservables
+		vars = make([]rtree.ScanVar, 0)
+	)
+	vars = append(vars, getPartonVariables(&e_partons)...)
+	vars = append(vars, getAngularVariables(&e_spin_obs)...)
+	
 	// Create a scanner to perform the event loop
 	sc, err := rtree.NewScannerVars(tree, vars...)
 	if err != nil {
@@ -90,13 +84,54 @@ func eventLoop(fname string, tname string, evtmax int64) {
 		// Print
 		if iev%10000 == 0 {
 			fmt.Println("Evt:", iev)
-			printEvent(e)
+			printEvent(e_partons)
 		}
 	}
 }
 
+// Helper to define the angular-related variables to load
+func getAngularVariables(e *SpinObservables) (vars []rtree.ScanVar) {
+	vars = []rtree.ScanVar{
+		{Name: "dphi_ll", Value: &e.dphi_ll},
+		{Name: "cosO_km", Value: &e.cos_km},
+		{Name: "cosO_kp", Value: &e.cos_kp},
+		{Name: "cosO_rm", Value: &e.cos_rm},
+		{Name: "cosO_rp", Value: &e.cos_rp},
+		{Name: "cosO_nm", Value: &e.cos_nm},
+		{Name: "cosO_np", Value: &e.cos_np},
+	}		
+	return 
+}
+
+// Helper to define the parton-related variables to load
+func getPartonVariables(e *PartonEvent) (vars []rtree.ScanVar) {
+	vars = []rtree.ScanVar{
+		{Name: "t_pt", Value: &e.t.pt},
+		{Name: "t_eta", Value: &e.t.eta},
+		{Name: "t_phi", Value: &e.t.phi},
+		{Name: "t_pid", Value: &e.t.pid},
+		{Name: "b_pt", Value: &e.b.pt},
+		{Name: "b_eta", Value: &e.b.eta},
+		{Name: "b_phi", Value: &e.b.phi},
+		{Name: "b_pid", Value: &e.b.pid},
+		{Name: "W_pt", Value: &e.W.pt},
+		{Name: "W_eta", Value: &e.W.eta},
+		{Name: "W_phi", Value: &e.W.phi},
+		{Name: "W_pid", Value: &e.W.pid},
+		{Name: "l_pt", Value: &e.l.pt},
+		{Name: "l_eta", Value: &e.l.eta},
+		{Name: "l_phi", Value: &e.l.phi},
+		{Name: "l_pid", Value: &e.l.pid},
+		{Name: "v_pt", Value: &e.v.pt},
+		{Name: "v_eta", Value: &e.v.eta},
+		{Name: "v_phi", Value: &e.v.phi},
+		{Name: "v_pid", Value: &e.v.pid},
+	}		
+	return 
+}
+
 // Event printing
-func printEvent(e Event) {
+func printEvent(e PartonEvent) {
 	fmt.Println(" * Top quarks")
 	fmt.Println("   - pT : ", e.t.pt)
 	fmt.Println("   - Eta: ", e.t.eta)
