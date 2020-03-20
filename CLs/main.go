@@ -5,12 +5,11 @@ import (
 	"log"
 	"math"
 
+	"go-hep.org/x/hep/hplot"
 	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/stat"
 	"gonum.org/v1/gonum/stat/distuv"
 
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
 )
@@ -120,33 +119,18 @@ func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
 }
 
 func plotCLsVsPOI(POI, CLs_exp, CLs_obs []float64) {
-	p, err := plot.New()
-	if err != nil {
-		log.Fatalf("could not create plot: %+v", err)
-	}
-
+	p := hplot.New()
 	p.Title.Text = "Stat-only Exclusion"
 	p.X.Label.Text = "POI value"
 	p.Y.Label.Text = "CLs"
 	p.Legend.Top = true
 
-	var (
-		pts_exp = make(plotter.XYs, len(POI))
-		pts_obs = make(plotter.XYs, len(POI))
+	plotutil.AddLinePoints(p.Plot,
+		"Expected", hplot.ZipXY(POI, CLs_exp),
+		"Observed", hplot.ZipXY(POI, CLs_obs),
 	)
 
-	for i := range POI {
-		pts_exp[i].X, pts_obs[i].X = POI[i], POI[i]
-		pts_exp[i].Y = CLs_exp[i]
-		pts_obs[i].Y = CLs_obs[i]
-	}
-
-	plotutil.AddLinePoints(p,
-		"Expected", pts_exp,
-		"Observed", pts_obs,
-	)
-
-	err = p.Save(4*vg.Inch, 4*vg.Inch, "CLs.pdf")
+	err := p.Save(4*vg.Inch, 4*vg.Inch, "CLs.pdf")
 	if err != nil {
 		log.Fatalf("could not save plot: %+v", err)
 	}
