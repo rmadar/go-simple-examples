@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math"
 
+	"go-hep.org/x/hep/hplot"
 	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/stat"
 	"gonum.org/v1/gonum/stat/distuv"
-	
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/plotter"
+
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
 )
@@ -40,7 +40,6 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 		pseudodata_Bonly[i] = createPseudodata(model_Bonly)
 	}
 
-
 	// Prepare the loop over mu values
 	nPOI := 20
 
@@ -56,9 +55,9 @@ func computeCLsVsPOI(bkg, sig, obs []float64) (POI, CLs_exp, CLs_obs []float64) 
 	// Start to loop over mu values
 	for i := range POI {
 
-		// Print 
+		// Print
 		fmt.Println("POI scan: ", float64(i)/float64(nPOI)*100, "%")
-		
+
 		// Get S+B expectations
 		mu := POI[i]
 		model_SB := modelPrediction(bkg, sig, mu)
@@ -119,26 +118,20 @@ func computeCLs(nllr_sb, nllr_b []float64, ref float64) float64 {
 	return CLsb / CLb
 }
 
-func plotCLsVsPOI(POI, CLs_exp, CLs_obs []float64){
-	var (
-		p, _ = plot.New()
-		pts_exp = make(plotter.XYs, len(POI))
-		pts_obs = make(plotter.XYs, len(POI))
-	)
-
-	p.Title.Text   = "Stat-only Exclusion"
+func plotCLsVsPOI(POI, CLs_exp, CLs_obs []float64) {
+	p := hplot.New()
+	p.Title.Text = "Stat-only Exclusion"
 	p.X.Label.Text = "POI value"
 	p.Y.Label.Text = "CLs"
-	
-	for i := range POI {
-		pts_exp[i].X, pts_obs[i].X = POI[i], POI[i]
-		pts_exp[i].Y = CLs_exp[i]
-		pts_obs[i].Y = CLs_obs[i]
-	}
+	p.Legend.Top = true
 
-	plotutil.AddLinePoints(p,
-		"Expected", pts_exp,
-		"Observed", pts_obs)
-	
-	p.Save(4*vg.Inch, 4*vg.Inch, "CLs.pdf")
+	plotutil.AddLinePoints(p.Plot,
+		"Expected", hplot.ZipXY(POI, CLs_exp),
+		"Observed", hplot.ZipXY(POI, CLs_obs),
+	)
+
+	err := p.Save(4*vg.Inch, 4*vg.Inch, "CLs.pdf")
+	if err != nil {
+		log.Fatalf("could not save plot: %+v", err)
+	}
 }
