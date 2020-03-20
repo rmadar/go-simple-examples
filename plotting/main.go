@@ -38,8 +38,8 @@ func main() {
 
 func getPoints(x []float64, f func(float64) float64) plotter.XYs {
 	pts := make(plotter.XYs, len(x))
-	for i := range pts {
-		pts[i].X, pts[i].Y = x[i], f(x[i])
+	for i, X := range x {
+		pts[i].X, pts[i].Y = X, f(X)
 	}
 	return pts
 }
