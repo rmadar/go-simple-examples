@@ -1,7 +1,6 @@
 package main
 
 import (
-
 	"math"
 	
 	"gonum.org/v1/gonum/floats"
@@ -14,11 +13,13 @@ import (
 
 func main() {
 
+	// Create a plot object
 	p, _ := plot.New()
 	p.Title.Text   = "Plotutil example"
 	p.X.Label.Text = "X"
 	p.Y.Label.Text = "Y"
 
+	// Define variable to be plotted
 	var (
 		n  = 100 
 		x  = floats.Span(make([]float64, n), 0, 10)
@@ -26,20 +27,19 @@ func main() {
 		f2 = func(x float64) (y float64) { return x+10. }
 	)
 	
+	// Use the plotutil package
 	plotutil.AddLinePoints(p,
-		"y = f1(x)", getFunctionPoints(x, f1),
-		"y = f2(x)", getFunctionPoints(x, f2))
+		"y = f1(x)", getPoints(x, f1),
+		"y = f2(x)", getPoints(x, f2))
 	
 	// Save the plot to a PDF file.
 	p.Save(4*vg.Inch, 4*vg.Inch, "points.pdf")
 }
 
-// randomPoints returns some random x, y points.
-func getFunctionPoints(x []float64, f func(float64) float64) plotter.XYs {
+func getPoints(x []float64, f func(float64) float64) plotter.XYs {
 	pts := make(plotter.XYs, len(x))
 	for i := range pts {
-		pts[i].X = x[i]
-		pts[i].Y = f(x[i])
+		pts[i].X, pts[i].Y = x[i], f(x[i])
 	}
 	return pts
 }
