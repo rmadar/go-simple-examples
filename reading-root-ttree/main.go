@@ -3,21 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
-
+	
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
+
+	"gonum.org/v1/gonum/mat"
+	"go-hep.org/x/hep/fmom"
 )
 
-func main() {
-
-	var (
-		fname  = "ttbar_0j_parton.root"
-		tname  = "test"
-		evtmax = int64(10000)
-	)
-
-	eventLoop(fname, tname, evtmax)
-}
 
 type PartonEvent struct {
 	t Particles
@@ -44,6 +37,21 @@ type SpinObservables struct {
 	cos_nm []float32
 	cos_np []float32
 }
+
+const mtop float64 = 173.
+
+func main() {
+
+	var (
+		fname  = "ttbar_0j_parton.root"
+		tname  = "test"
+		evtmax = int64(10000)
+	)
+
+	eventLoop(fname, tname, evtmax)
+}
+
+
 
 // Event loop
 func eventLoop(fname string, tname string, evtmax int64) {
@@ -81,12 +89,38 @@ func eventLoop(fname string, tname string, evtmax int64) {
 			log.Fatalf("could not scan entry %d: %+v", iev, err)
 		}
 
-		// Print
-		if iev%10000 == 0 {
+		// Print the first event
+		if iev == 1 {
 			fmt.Println("Evt:", iev)
 			printEvent(e_partons)
 		}
+
+		// Getting slice of particles
+		tops := e_partons.t
+		bottoms := e_partons.b
+		leptons := e_partons.l
+				
+		// (re)-computing spin observables
+		var (
+			t_P4 = fmom.NewPtEtaPhiM(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), mtop)
+			tbar_P4 = fmom.NewPtEtaPhiM(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), mtop) 
+		)
+
+		boost3D := getP4BoostVector(t_P4)
 	}
+}
+
+
+// Get spin basis - not yet tested
+func getSpinBasis(t, tbar fmom.P4) (k, r, n mat.Vector) {
+	
+	return k, r, n
+}
+
+// Get a vector boost of a lorentz-vector - not yet tested (actually doesn't work)
+func getP4BoostVector(v fmom.PtEtaPhiM) (boost mat.Vector){
+	boost = mat.Vector(v.P1()/v.P4(), v.P2()/v.P4(), v.P3()/v.P4())
+	return boost
 }
 
 // Helper to define the angular-related variables to load
