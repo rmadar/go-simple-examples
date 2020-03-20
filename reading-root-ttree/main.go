@@ -57,8 +57,11 @@ func eventLoop(fname string, tname string, evtmax int64) {
 	
 	// Actual event loop
 	for sc.Next() && sc.Entry() < evtmax {
+
+		// Load the event variables
 		iev := sc.Entry()
 
+		// Print
 		if iev%1000==0 {
 			fmt.Println("Evt:", iev)
 			printEvent(e)
