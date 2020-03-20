@@ -32,7 +32,7 @@ type Particles struct {
 	eta []float32
 	phi []float32
 	m   []float32
-	pid []int32
+	pid []float32
 }
 
 // Event loop
@@ -42,7 +42,7 @@ func eventLoop(fname string, tname string, evtmax int64) {
 	fmt.Println("Opening TTree", tname, "in ROOT file", fname)
 	file := openRootFile(fname)
 	tree := getTtree(file, tname)
-
+	
 	// Event and variables to load
 	var e Event
 	vars := []rtree.ScanVar{
@@ -54,7 +54,19 @@ func eventLoop(fname string, tname string, evtmax int64) {
 		{Name: "b_eta", Value: &e.b.eta},
 		{Name: "b_phi", Value: &e.b.phi},
 		{Name: "b_pid", Value: &e.b.pid},
-	}
+		{Name: "W_pt", Value: &e.W.pt},
+		{Name: "W_eta", Value: &e.W.eta},
+		{Name: "W_phi", Value: &e.W.phi},
+		{Name: "W_pid", Value: &e.W.pid},
+		{Name: "l_pt", Value: &e.l.pt},
+		{Name: "l_eta", Value: &e.l.eta},
+		{Name: "l_phi", Value: &e.l.phi},
+		{Name: "l_pid", Value: &e.l.pid},
+		{Name: "v_pt", Value: &e.v.pt},
+		{Name: "v_eta", Value: &e.v.eta},
+		{Name: "v_phi", Value: &e.v.phi},
+		{Name: "v_pid", Value: &e.v.pid},
+	}		
 
 	// Create a scanner to perform the event loop
 	sc, err := rtree.NewScannerVars(tree, vars...)
@@ -66,16 +78,17 @@ func eventLoop(fname string, tname string, evtmax int64) {
 	// Actual event loop
 	for sc.Next() && sc.Entry() < evtmax {
 
-		// Load the event variables
+		// Entry index
 		iev := sc.Entry()
 
+		// Load variable of the event
 		err := sc.Scan()
 		if err != nil {
 			log.Fatalf("could not scan entry %d: %+v", iev, err)
 		}
 
 		// Print
-		if iev%1000 == 0 {
+		if iev%10000 == 0 {
 			fmt.Println("Evt:", iev)
 			printEvent(e)
 		}
@@ -94,7 +107,24 @@ func printEvent(e Event) {
 	fmt.Println("   - Eta: ", e.b.eta)
 	fmt.Println("   - Phi: ", e.b.phi)
 	fmt.Println("   - pid: ", e.b.pid)
+	fmt.Println(" * W-bosons")
+	fmt.Println("   - pT : ", e.W.pt)
+	fmt.Println("   - Eta: ", e.W.eta)
+	fmt.Println("   - Phi: ", e.W.phi)
+	fmt.Println("   - pid: ", e.W.pid)
+	fmt.Println(" * Leptons")
+	fmt.Println("   - pT : ", e.l.pt)
+	fmt.Println("   - Eta: ", e.l.eta)
+	fmt.Println("   - Phi: ", e.l.phi)
+	fmt.Println("   - pid: ", e.l.pid)
+	fmt.Println(" * Neutrinos")
+	fmt.Println("   - pT : ", e.v.pt)
+	fmt.Println("   - Eta: ", e.v.eta)
+	fmt.Println("   - Phi: ", e.v.phi)
+	fmt.Println("   - pid: ", e.v.pid)
+
 }
+
 
 // Helper to open a ROOT file
 func openRootFile(fname string) *groot.File {
