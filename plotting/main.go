@@ -34,8 +34,16 @@ func main() {
 	// Use the plotutil package
 	plotutil.AddLinePoints(p,
 		"y = f1(x)", getPoints(x, f1),
-		"y = f2(x)", getPoints(x, f2))
-	
+		"y = f2(x)", getPoints(x, f2),
+	)
+
+	cos := plotter.NewFunction(math.Cos)
+	cos.LineStyle.Color = plotutil.SoftColors[2]
+	p.Add(cos)
+	p.Legend.Add("cos(x)", cos)
+	p.Legend.Top = true
+	p.Legend.Left = true
+
 	// Save the plot to a PDF file.
 	err = p.Save(4*vg.Inch, 4*vg.Inch, "points.pdf")
 	if err != nil {
