@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
 
-	"gonum.org/v1/gonum/mat"
-	"go-hep.org/x/hep/fmom"
+	"github.com/rmadar/go-lorentz-vector/lv"
+	"github.com/golang/geo/r3"
 )
 
 
@@ -45,7 +46,7 @@ func main() {
 	var (
 		fname  = "ttbar_0j_parton.root"
 		tname  = "test"
-		evtmax = int64(10000)
+		evtmax = int64(10)
 	)
 
 	eventLoop(fname, tname, evtmax)
@@ -81,46 +82,98 @@ func eventLoop(fname string, tname string, evtmax int64) {
 	for sc.Next() && sc.Entry() < evtmax {
 
 		// Entry index
-		iev := sc.Entry()
+		ievt := sc.Entry()
 
 		// Load variable of the event
 		err := sc.Scan()
 		if err != nil {
-			log.Fatalf("could not scan entry %d: %+v", iev, err)
-		}
-
-		// Print the first event
-		if iev == 1 {
-			fmt.Println("Evt:", iev)
-			printEvent(e_partons)
+			log.Fatalf("could not scan entry %d: %+v", ievt, err)
 		}
 
 		// Getting slice of particles
 		tops := e_partons.t
-		bottoms := e_partons.b
 		leptons := e_partons.l
 				
-		// (re)-computing spin observables
+		// Re-computing spin observables
 		var (
-			t_P4 = fmom.NewPtEtaPhiM(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), mtop)
-			tbar_P4 = fmom.NewPtEtaPhiM(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), mtop) 
+			loadVec = lv.NewFourVecPtEtaPhiM
+			tplus_P4  = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), mtop)
+			tminus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), mtop)
+			lminus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), 0.0)
+			lplus_P4  = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), 0.0)
 		)
+		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lminus_P4, lplus_P4)
 
-		boost3D := getP4BoostVector(t_P4)
+		// Compare with stored variables
+		fmt.Println("\nComparing stored and recomputed spin variables:")
+		fmt.Println("km: ", float64(e_spin_obs.cos_km[0]) - cosTheta["km"])
+		fmt.Println("rm: ", float64(e_spin_obs.cos_rm[0]) - cosTheta["rm"])
+		fmt.Println("nm: ", float64(e_spin_obs.cos_nm[0]) - cosTheta["nm"])
+		fmt.Println("kp: ", float64(e_spin_obs.cos_kp[0]) - cosTheta["kp"])
+		fmt.Println("rp: ", float64(e_spin_obs.cos_rp[0]) - cosTheta["rp"])
+		fmt.Println("np: ", float64(e_spin_obs.cos_np[0]) - cosTheta["np"])
+
+
+		if ievt==0 {
+			printEvent(e_partons)
+		}
 	}
 }
 
 
-// Get spin basis - not yet tested
-func getSpinBasis(t, tbar fmom.P4) (k, r, n mat.Vector) {
+// Compute spin-related cosines
+func computeSpinCosines(tplus, tminus, lplus, lminus lv.FourVec) (map[string]float64){
+
+	// Get the proper basis
+	k, r, n := getSpinBasis(tplus, tminus)
+
+	// Get 3-vectors of lminus (lplus) in tplus (tmius) rest-frame 
+	b_to_tplus := tplus.GetBoost()
+	lminus_topRF := lminus.ApplyBoost(b_to_tplus).Pvec
+	b_to_tminus := tminus.GetBoost()
+	lplus_topRF := lplus.ApplyBoost(b_to_tminus).Pvec
+
+	// Fill the six cosines
+	cosTheta := map[string]float64{
+		"k+": math.Cos(lplus_topRF.Angle(k).Radians()),
+		"r+": math.Cos(lplus_topRF.Angle(r).Radians()),
+		"n+": math.Cos(lplus_topRF.Angle(n).Radians()),
+		"k-": math.Cos(lminus_topRF.Angle(k.Mul(-1)).Radians()),
+		"r-": math.Cos(lminus_topRF.Angle(r.Mul(-1)).Radians()),
+		"n-": math.Cos(lminus_topRF.Angle(n.Mul(-1)).Radians()),
+	}
 	
-	return k, r, n
+	return cosTheta
 }
 
-// Get a vector boost of a lorentz-vector - not yet tested (actually doesn't work)
-func getP4BoostVector(v fmom.PtEtaPhiM) (boost mat.Vector){
-	boost = mat.Vector(v.P1()/v.P4(), v.P2()/v.P4(), v.P3()/v.P4())
-	return boost
+// Get spin basis
+func getSpinBasis(t, tbar lv.FourVec) (k, r, n r3.Vector) {
+
+	// ttbar rest frame
+	ttbar := t.Add(tbar)
+	boost_to_ttbar := ttbar.GetBoost()
+
+	// Get top direction in ttbar rest frame
+	top_rest := t.ApplyBoost(boost_to_ttbar)
+	k = top_rest.Pvec
+	k = k.Normalize()
+	
+	// Get the beam axis (Oz) and coeff to build ortho-normal basis
+	beam_axis := r3.Vector{0, 0, 1}
+	yval := k.Dot(beam_axis)
+	ysign := yval/math.Abs(yval)
+	rval := math.Sqrt(1-yval*yval)
+	
+	// Get n axis: n = sign(y)*r*(beam cross k)  
+	n = beam_axis.Cross(k)
+	n = n.Mul(rval*ysign)
+	
+	// Get r axis: r = sign(y)*r*(beam -y*k)
+	r = beam_axis.Add(k.Mul(-yval))
+	r = r.Mul(1./rval)
+	r = r.Mul(ysign)
+
+	return k, r, n
 }
 
 // Helper to define the angular-related variables to load
