@@ -28,7 +28,7 @@ func main() {
 		n  = 100
 		x  = floats.Span(make([]float64, n), 0, 10)
 		f1 = func(x float64) (y float64) { return math.Sin(x + 5.) }
-		f2 = func(x float64) (y float64) { return x + 10. }
+		f2 = func(x float64) (y float64) { return x/2. + 2. }
 	)
 
 	// Use the plotutil package
