@@ -103,21 +103,28 @@ func eventLoop(fname string, tname string, evtmax int64) {
 			loadVec   = lv.NewFourVecPtEtaPhiM
 			tplus_P4  = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), mtop)
 			tminus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), mtop)
-			lminus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), 0.0)
-			lplus_P4  = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), 0.0)
+			lplus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), 0.0)
+			lminus_P4  = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), 0.0)
 		)
-		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lminus_P4, lplus_P4)
+		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lplus_P4, lminus_P4)
 
 		// Compare with stored variables
 		fmt.Println("\nComparing stored and recomputed spin variables:")
-		fmt.Println("km: ", float64(e_spin_obs.cos_km[0]) - cosTheta["km"])
-		fmt.Println("rm: ", float64(e_spin_obs.cos_rm[0]) - cosTheta["rm"])
-		fmt.Println("nm: ", float64(e_spin_obs.cos_nm[0]) - cosTheta["nm"])
-		fmt.Println("kp: ", float64(e_spin_obs.cos_kp[0]) - cosTheta["kp"])
-		fmt.Println("rp: ", float64(e_spin_obs.cos_rp[0]) - cosTheta["rp"])
-		fmt.Println("np: ", float64(e_spin_obs.cos_np[0]) - cosTheta["np"])
+		fmt.Println("k-: ", e_spin_obs.cos_km[0], cosTheta["k-"])
+		fmt.Println("r-: ", e_spin_obs.cos_rm[0], cosTheta["r-"])
+		fmt.Println("n-: ", e_spin_obs.cos_nm[0], cosTheta["n-"])
+		fmt.Println("k+: ", e_spin_obs.cos_kp[0], cosTheta["k+"])
+		fmt.Println("r+: ", e_spin_obs.cos_rp[0], cosTheta["r+"])
+		fmt.Println("n+: ", e_spin_obs.cos_np[0], cosTheta["n+"])
 
-
+		// Compare spin basis vectors
+		k, r, n := getSpinBasis(tplus_P4, tminus_P4)
+		getVector := func (x[]float32) (r3.Vector) {return r3.Vector{float64(x[0]), float64(x[1]), float64(x[2])} }
+		k_ref, r_ref, n_ref := getVector(e_spin_obs.kVec), getVector(e_spin_obs.rVec), getVector(e_spin_obs.nVec)
+		fmt.Println(k.Add(k_ref.Mul(-1)))
+		fmt.Println(r.Add(r_ref.Mul(-1)))
+		fmt.Println(n.Add(n_ref.Mul(-1)))
+		
 		if ievt==0 {
 			printEvent(e_partons)
 		}
@@ -132,13 +139,19 @@ func computeSpinCosines(tplus, tminus, lplus, lminus lv.FourVec) (map[string]flo
 	k, r, n := getSpinBasis(tplus, tminus)
 
 	// Get 3-vectors of lminus (lplus) in tplus (tmius) rest-frame 
-	b_to_tplus := tplus.GetBoost()
-	lminus_topRF := lminus.ApplyBoost(b_to_tplus).Pvec
-	b_to_tminus := tminus.GetBoost()
-	lplus_topRF := lplus.ApplyBoost(b_to_tminus).Pvec
+	//toZMF := func(daughter, mother lv.FourVec) (lv.FourVec) {
+	//	return daughter.ApplyBoost(mother.GetBoost().Mul(-1))
+	//}
+	lplus_topRF := lplus.ToRestFrame(tplus).Pvec
+	lminus_topRF := lminus.ToRestFrame(tminus).Pvec
 
 	// Fill the six cosines
-	getCos := func(a, b r3.Vector, m float64) (float64){ return math.Cos(a.Angle(b.Mul(m)).Radians()) }
+	getCos := func(a, b r3.Vector, m float64) (float64){
+		//an, bn := a.Norm(), b.Norm()
+		//return a.Dot(b) / (an*bn)
+		return math.Cos(a.Angle(b.Mul(m)).Radians())
+		//return 2.0
+	}
 	cosTheta := map[string]float64{
 		"k+": getCos(lplus_topRF , k,  1),
 		"r+": getCos(lplus_topRF , r,  1),
@@ -159,7 +172,7 @@ func getSpinBasis(t, tbar lv.FourVec) (k, r, n r3.Vector) {
 	boost_to_ttbar := ttbar.GetBoost()
 
 	// Get top direction in ttbar rest frame
-	top_rest := t.ApplyBoost(boost_to_ttbar)
+	top_rest := t.ApplyBoost(boost_to_ttbar.Mul(-1))
 	k = top_rest.Pvec
 	k = k.Normalize()
 	
@@ -168,16 +181,15 @@ func getSpinBasis(t, tbar lv.FourVec) (k, r, n r3.Vector) {
 	yval := k.Dot(beam_axis)
 	ysign := yval/math.Abs(yval)
 	rval := math.Sqrt(1-yval*yval)
-	
-	// Get n axis: n = sign(y)*r*(beam cross k)  
-	n = beam_axis.Cross(k)
-	n = n.Mul(rval*ysign)
-	
-	// Get r axis: r = sign(y)*r*(beam -y*k)
-	r = beam_axis.Add(k.Mul(-yval))
-	r = r.Mul(1./rval)
-	r = r.Mul(ysign)
 
+	// Get r axis: r = sign(y)/r * (beam -y*k)
+	r = beam_axis.Add(k.Mul(-yval))
+	r = r.Mul(1./rval*ysign)
+	
+	// Get n axis: n = sign(y)/r * (beam cross k)  
+	n = beam_axis.Cross(k)
+	n = n.Mul(1./rval*ysign)
+	
 	return k, r, n
 }
 
