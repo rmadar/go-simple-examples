@@ -1,3 +1,4 @@
+// Example of hypothesis testing based on CLs method
 package main
 
 import (
