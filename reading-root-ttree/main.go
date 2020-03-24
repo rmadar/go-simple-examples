@@ -46,7 +46,7 @@ func main() {
 
 	var (
 		fname  = "ttbar_0j_parton.root"
-		tname  = "test"
+		tname  = "spinCorrelation"
 		evtmax = int64(10)
 	)
 
