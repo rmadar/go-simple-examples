@@ -1,3 +1,4 @@
+// Exemple of reading a ROOT TTree computing some spin-correlation observables
 package main
 
 import (

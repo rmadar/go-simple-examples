@@ -1,3 +1,4 @@
+// Short example to create a plot in go
 package main
 
 import (
