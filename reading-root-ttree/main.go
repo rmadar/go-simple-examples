@@ -31,6 +31,9 @@ type Particles struct {
 }
 
 type SpinObservables struct {
+	kVec []float32 
+	rVec []float32 
+	nVec []float32 
 	dphi_ll []float32
 	cos_km []float32
 	cos_kp []float32
@@ -97,7 +100,7 @@ func eventLoop(fname string, tname string, evtmax int64) {
 				
 		// Re-computing spin observables
 		var (
-			loadVec = lv.NewFourVecPtEtaPhiM
+			loadVec   = lv.NewFourVecPtEtaPhiM
 			tplus_P4  = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), mtop)
 			tminus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), mtop)
 			lminus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), 0.0)
@@ -135,13 +138,14 @@ func computeSpinCosines(tplus, tminus, lplus, lminus lv.FourVec) (map[string]flo
 	lplus_topRF := lplus.ApplyBoost(b_to_tminus).Pvec
 
 	// Fill the six cosines
+	getCos := func(a, b r3.Vector, m float64) (float64){ return math.Cos(a.Angle(b.Mul(m)).Radians()) }
 	cosTheta := map[string]float64{
-		"k+": math.Cos(lplus_topRF.Angle(k).Radians()),
-		"r+": math.Cos(lplus_topRF.Angle(r).Radians()),
-		"n+": math.Cos(lplus_topRF.Angle(n).Radians()),
-		"k-": math.Cos(lminus_topRF.Angle(k.Mul(-1)).Radians()),
-		"r-": math.Cos(lminus_topRF.Angle(r.Mul(-1)).Radians()),
-		"n-": math.Cos(lminus_topRF.Angle(n.Mul(-1)).Radians()),
+		"k+": getCos(lplus_topRF , k,  1),
+		"r+": getCos(lplus_topRF , r,  1),
+		"n+": getCos(lplus_topRF , n,  1),
+		"k-": getCos(lminus_topRF, k, -1),
+		"r-": getCos(lminus_topRF, r, -1),
+		"n-": getCos(lminus_topRF, n, -1),
 	}
 	
 	return cosTheta
@@ -180,6 +184,11 @@ func getSpinBasis(t, tbar lv.FourVec) (k, r, n r3.Vector) {
 // Helper to define the angular-related variables to load
 func getAngularVariables(e *SpinObservables) (vars []rtree.ScanVar) {
 	vars = []rtree.ScanVar{
+		{Name: "kvec"   , Value: &e.kVec},
+		{Name: "rvec"   , Value: &e.rVec},
+		{Name: "nvec"   , Value: &e.nVec},
+		{Name: "dphi_ll", Value: &e.dphi_ll},
+		{Name: "dphi_ll", Value: &e.dphi_ll},
 		{Name: "dphi_ll", Value: &e.dphi_ll},
 		{Name: "cosO_km", Value: &e.cos_km},
 		{Name: "cosO_kp", Value: &e.cos_kp},
