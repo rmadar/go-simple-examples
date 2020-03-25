@@ -200,7 +200,16 @@ func eventLoop(fname string, tname string, evtmax int64) {
 		e_spin_obsOut.cos_kp = []float32{float32(cosTheta["k+"])}
 		e_spin_obsOut.cos_rp = []float32{float32(cosTheta["r+"])}
 		e_spin_obsOut.cos_np = []float32{float32(cosTheta["n+"])}
-		tout.Write()
+
+		_, err = tout.Write()
+		if err != nil {
+			log.Fatalf("could not write event %d: %+v", ievt, err)
+		}
+	}
+
+	err = tout.Close()
+	if err != nil {
+		log.Fatalf("could not close tree-writer: %+v", err)
 	}
 }
 
