@@ -92,6 +92,8 @@ github.com/rmadar/go-lorentz-vector v0.0.0-20200323143407-7b004db39d2d/go.mod h1
 github.com/rmadar/go-lorentz-vector v0.0.0-20200323225219-829c028fbd30 h1:nMb5FZ7961q0omlp6uKOs5uhL+CRGrC5GmXRydi7V/M=
 github.com/rmadar/go-lorentz-vector v0.0.0-20200323225219-829c028fbd30/go.mod h1:7fHJg+m0Jn+tVWaPGbi3jfp3jbtsfYl6oYsiUfqqjPE=
 github.com/rmadar/go-lorentz-vector v0.0.0-20200324231849-1017a43d9d96 h1:s5foIrYsZFS7044qF5DjVuzwaXfN5SSYiDtXyrpBAvA=
+github.com/rmadar/go-lorentz-vector v0.0.0-20200325093911-91e265e9d449 h1:Swiv2GTcp6sZz3OmNdlltOOq4CSWKUO2R695JHUkOxo=
+github.com/rmadar/go-lorentz-vector v0.0.0-20200325093911-91e265e9d449/go.mod h1:7fHJg+m0Jn+tVWaPGbi3jfp3jbtsfYl6oYsiUfqqjPE=
 github.com/ruudk/golang-pdf417 v0.0.0-20181029194003-1af4ab5afa58/go.mod h1:6lfFZQK844Gfx8o5WFuvpxWRwnSoipWe/p622j1v06w=
 github.com/sbinet/npyio v0.2.0/go.mod h1:Wk81yG1hlHgHAy4KXRQ59EfpZoAzT+2V4Pjyv7rUEM0=
 github.com/sbinet/npyio v0.3.0/go.mod h1:dJ6OpFwUDVVuDSqP5b8paU3yd7Rcs2TZiFimWwD30nc=
