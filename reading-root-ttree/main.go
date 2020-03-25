@@ -8,7 +8,8 @@ import (
 	
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
-
+	"go-hep.org/x/hep/fmom"
+	
 	"github.com/rmadar/go-lorentz-vector/lv"
 	"github.com/golang/geo/r3"
 )
@@ -66,22 +67,47 @@ func eventLoop(fname string, tname string, evtmax int64) {
 	file := openRootFile(fname)
 	tree := getTtree(file, tname)
 	
-	// Event and variables to load
+	// Create a scanner to perform the event loop on the input tree
 	var (
 		e_partons PartonEvent
 		e_spin_obs SpinObservables
-		vars = make([]rtree.ScanVar, 0)
+		rvars = make([]rtree.ScanVar, 0)
 	)
-	vars = append(vars, getPartonVariables(&e_partons)...)
-	vars = append(vars, getAngularVariables(&e_spin_obs)...)
-	
-	// Create a scanner to perform the event loop
-	sc, err := rtree.NewScannerVars(tree, vars...)
+	rvars = append(rvars, getReadPartonVariables(&e_partons)...)
+	rvars = append(rvars, getReadAngularVariables(&e_spin_obs)...)
+	sc, err := rtree.NewScannerVars(tree, rvars...)
 	if err != nil {
 		log.Fatalf("could not create scanner: %+v", err)
 	}
 	defer sc.Close()
+	
+	// Ceate a new file, new writer to save new variables in a tree
+	fnameOut := "test.root"
+	fout, err := groot.Create(fnameOut)
+	if err != nil {
+		log.Fatalf("could not create ROOT file %q: %w", fnameOut, err)
+	}
+	defer fout.Close()
+	var e_spin_obsOut SpinObservables
+	wvars := []rtree.WriteVar{
+		{Name: "kvec"   , Value: &e_spin_obsOut.kVec},
+		{Name: "rvec"   , Value: &e_spin_obsOut.rVec},
+		{Name: "nvec"   , Value: &e_spin_obsOut.nVec},
+		{Name: "dphi_ll", Value: &e_spin_obsOut.dphi_ll},
+		{Name: "cosO_km", Value: &e_spin_obsOut.cos_km},
+		{Name: "cosO_kp", Value: &e_spin_obsOut.cos_kp},
+		{Name: "cosO_rm", Value: &e_spin_obsOut.cos_rm},
+		{Name: "cosO_rp", Value: &e_spin_obsOut.cos_rp},
+		{Name: "cosO_nm", Value: &e_spin_obsOut.cos_nm},
+		{Name: "cosO_np", Value: &e_spin_obsOut.cos_np},
+	}
+	wr, err := rtree.NewWriter(fout, "newSpinObs", wvars)
+	if err != nil {
+		log.Fatalf("could not create scanner: %+v", err)
+	}
+	defer wr.Close()
 
+	
 	// Actual event loop
 	for sc.Next() && sc.Entry() < evtmax {
 
@@ -100,11 +126,11 @@ func eventLoop(fname string, tname string, evtmax int64) {
 				
 		// Re-computing spin observables
 		var (
-			loadVec   = lv.NewFourVecPtEtaPhiM
-			tplus_P4  = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), mtop)
-			tminus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), mtop)
-			lplus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), 0.0)
-			lminus_P4  = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), 0.0)
+			loadVec = lv.NewFourVecPtEtaPhiM
+			tplus_P4 = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), float64(tops.m[0]))
+			tminus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), float64(tops.m[1]))
+			lplus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
+			lminus_P4 = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), float64(leptons.m[1]))
 		)
 		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lplus_P4, lminus_P4)
 
@@ -124,6 +150,13 @@ func eventLoop(fname string, tname string, evtmax int64) {
 		fmt.Println(k.Add(k_ref.Mul(-1)))
 		fmt.Println(r.Add(r_ref.Mul(-1)))
 		fmt.Println(n.Add(n_ref.Mul(-1)))
+
+		// Compare four-vectors obtained with fmom
+		lplus_fmom := fmom.NewPtEtaPhiM(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
+		fmt.Printf("(px, py, pz, E)_fmom = (%.2f, %.2f, %.2f, %.2f)\n", lplus_fmom.Px(), lplus_fmom.Py(), lplus_fmom.Pz(), lplus_fmom.E() )
+		fmt.Printf("(px, py, pz, E)_lv   = (%.2f, %.2f, %.2f, %.2f)\n", lplus_P4.Px(), lplus_P4.Py(), lplus_P4.Pz(), lplus_P4.E() )
+		fmt.Printf("Phi[fmom, lv] = [%.2f, %.2f]\n", lplus_fmom.Phi(), lplus_P4.Phi())
+
 		
 		if ievt==0 {
 			printEvent(e_partons)
@@ -139,26 +172,23 @@ func computeSpinCosines(tplus, tminus, lplus, lminus lv.FourVec) (map[string]flo
 	k, r, n := getSpinBasis(tplus, tminus)
 
 	// Get 3-vectors of lminus (lplus) in tplus (tmius) rest-frame 
-	//toZMF := func(daughter, mother lv.FourVec) (lv.FourVec) {
-	//	return daughter.ApplyBoost(mother.GetBoost().Mul(-1))
-	//}
-	lplus_topRF := lplus.ToRestFrame(tplus).Pvec
-	lminus_topRF := lminus.ToRestFrame(tminus).Pvec
+	lplusRF := lplus.ToRestFrameOf(tplus).Pvec
+	lminusRF := lminus.ToRestFrameOf(tminus).Pvec
 
 	// Fill the six cosines
 	getCos := func(a, b r3.Vector, m float64) (float64){
-		//an, bn := a.Norm(), b.Norm()
-		//return a.Dot(b) / (an*bn)
+		// an, bn := a.Norm(), b.Norm()
+		// return a.Dot(b) / (an*bn)
 		return math.Cos(a.Angle(b.Mul(m)).Radians())
 		//return 2.0
 	}
 	cosTheta := map[string]float64{
-		"k+": getCos(lplus_topRF , k,  1),
-		"r+": getCos(lplus_topRF , r,  1),
-		"n+": getCos(lplus_topRF , n,  1),
-		"k-": getCos(lminus_topRF, k, -1),
-		"r-": getCos(lminus_topRF, r, -1),
-		"n-": getCos(lminus_topRF, n, -1),
+		"k+": getCos(lplusRF , k,  1),
+		"r+": getCos(lplusRF , r,  1),
+		"n+": getCos(lplusRF , n,  1),
+		"k-": getCos(lminusRF, k, -1),
+		"r-": getCos(lminusRF, r, -1),
+		"n-": getCos(lminusRF, n, -1),
 	}
 	
 	return cosTheta
@@ -194,13 +224,11 @@ func getSpinBasis(t, tbar lv.FourVec) (k, r, n r3.Vector) {
 }
 
 // Helper to define the angular-related variables to load
-func getAngularVariables(e *SpinObservables) (vars []rtree.ScanVar) {
+func getReadAngularVariables(e *SpinObservables) (vars []rtree.ScanVar) {
 	vars = []rtree.ScanVar{
 		{Name: "kvec"   , Value: &e.kVec},
 		{Name: "rvec"   , Value: &e.rVec},
 		{Name: "nvec"   , Value: &e.nVec},
-		{Name: "dphi_ll", Value: &e.dphi_ll},
-		{Name: "dphi_ll", Value: &e.dphi_ll},
 		{Name: "dphi_ll", Value: &e.dphi_ll},
 		{Name: "cosO_km", Value: &e.cos_km},
 		{Name: "cosO_kp", Value: &e.cos_kp},
@@ -213,28 +241,38 @@ func getAngularVariables(e *SpinObservables) (vars []rtree.ScanVar) {
 }
 
 // Helper to define the parton-related variables to load
-func getPartonVariables(e *PartonEvent) (vars []rtree.ScanVar) {
+func getReadPartonVariables(e *PartonEvent) (vars []rtree.ScanVar) {
 	vars = []rtree.ScanVar{
+		// Top-quarks
 		{Name: "t_pt", Value: &e.t.pt},
 		{Name: "t_eta", Value: &e.t.eta},
 		{Name: "t_phi", Value: &e.t.phi},
 		{Name: "t_pid", Value: &e.t.pid},
+		{Name: "t_m", Value: &e.t.m},
+		// bottom-quarks
 		{Name: "b_pt", Value: &e.b.pt},
 		{Name: "b_eta", Value: &e.b.eta},
 		{Name: "b_phi", Value: &e.b.phi},
 		{Name: "b_pid", Value: &e.b.pid},
+		{Name: "b_m", Value: &e.b.m},
+		// W-boson
 		{Name: "W_pt", Value: &e.W.pt},
 		{Name: "W_eta", Value: &e.W.eta},
 		{Name: "W_phi", Value: &e.W.phi},
 		{Name: "W_pid", Value: &e.W.pid},
+		{Name: "W_m", Value: &e.W.m},
+		// Charged leptons
 		{Name: "l_pt", Value: &e.l.pt},
 		{Name: "l_eta", Value: &e.l.eta},
 		{Name: "l_phi", Value: &e.l.phi},
 		{Name: "l_pid", Value: &e.l.pid},
+		{Name: "l_m", Value: &e.l.m},
+		// Neutrinos
 		{Name: "v_pt", Value: &e.v.pt},
 		{Name: "v_eta", Value: &e.v.eta},
 		{Name: "v_phi", Value: &e.v.phi},
 		{Name: "v_pid", Value: &e.v.pid},
+		{Name: "v_m", Value: &e.v.m},
 	}		
 	return 
 }
