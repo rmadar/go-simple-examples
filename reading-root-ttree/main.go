@@ -51,7 +51,7 @@ func main() {
 	var (
 		fname  = "ttbar_0j_parton.root"
 		tname  = "spinCorrelation"
-		evtmax = int64(10)
+		evtmax = int64(10000)
 	)
 
 	eventLoop(fname, tname, evtmax)
@@ -88,24 +88,50 @@ func eventLoop(fname string, tname string, evtmax int64) {
 		log.Fatalf("could not create ROOT file %q: %w", fnameOut, err)
 	}
 	defer fout.Close()
-	var e_spin_obsOut SpinObservables
-	wvars := []rtree.WriteVar{
-		{Name: "kvec"   , Value: &e_spin_obsOut.kVec},
-		{Name: "rvec"   , Value: &e_spin_obsOut.rVec},
-		{Name: "nvec"   , Value: &e_spin_obsOut.nVec},
-		{Name: "dphi_ll", Value: &e_spin_obsOut.dphi_ll},
-		{Name: "cosO_km", Value: &e_spin_obsOut.cos_km},
-		{Name: "cosO_kp", Value: &e_spin_obsOut.cos_kp},
-		{Name: "cosO_rm", Value: &e_spin_obsOut.cos_rm},
-		{Name: "cosO_rp", Value: &e_spin_obsOut.cos_rp},
-		{Name: "cosO_nm", Value: &e_spin_obsOut.cos_nm},
-		{Name: "cosO_np", Value: &e_spin_obsOut.cos_np},
+	var (
+		e_spin_obsOut SpinObservables
+		//e_spin_obsCopy SpinObservables
+		nUnit_size int32
+		nThree_size int32
+	)
+	// this structure of slices is not very good but is necessary
+	// to keep the same 'SpinObservables' structure for reading/writting.
+	// (this is due to how the input tree is produced)
+	wvars := []rtree.WriteVar{ 
+
+		// Counter for slices
+		{Name: "N1"     , Value: &nUnit_size},
+		{Name: "N3"     , Value: &nThree_size},
+
+		// Locally computed variables
+		{Name: "kvec"   , Value: &e_spin_obsOut.kVec, Count: "N3"},
+		{Name: "rvec"   , Value: &e_spin_obsOut.rVec, Count: "N3"},
+		{Name: "nvec"   , Value: &e_spin_obsOut.nVec, Count: "N3"},
+		{Name: "dphi_ll", Value: &e_spin_obsOut.dphi_ll, Count: "N1"},
+		{Name: "cosO_km", Value: &e_spin_obsOut.cos_km, Count: "N1"},
+		{Name: "cosO_kp", Value: &e_spin_obsOut.cos_kp, Count: "N1"},
+		{Name: "cosO_rm", Value: &e_spin_obsOut.cos_rm, Count: "N1"},
+		{Name: "cosO_rp", Value: &e_spin_obsOut.cos_rp, Count: "N1"},
+		{Name: "cosO_nm", Value: &e_spin_obsOut.cos_nm, Count: "N1"},
+		{Name: "cosO_np", Value: &e_spin_obsOut.cos_np, Count: "N1"},
+
+		// Copy of original variables
+		{Name: "kvec_orig"   , Value: &e_spin_obs.kVec, Count: "N3"},
+		{Name: "rvec_orig"   , Value: &e_spin_obs.rVec, Count: "N3"},
+		{Name: "nvec_orig"   , Value: &e_spin_obs.nVec, Count: "N3"},
+		{Name: "dphi_ll_orig", Value: &e_spin_obs.dphi_ll, Count: "N1"},
+		{Name: "cosO_km_orig", Value: &e_spin_obs.cos_km, Count: "N1"},
+		{Name: "cosO_kp_orig", Value: &e_spin_obs.cos_kp, Count: "N1"},
+		{Name: "cosO_rm_orig", Value: &e_spin_obs.cos_rm, Count: "N1"},
+		{Name: "cosO_rp_orig", Value: &e_spin_obs.cos_rp, Count: "N1"},
+		{Name: "cosO_nm_orig", Value: &e_spin_obs.cos_nm, Count: "N1"},
+		{Name: "cosO_np_orig", Value: &e_spin_obs.cos_np, Count: "N1"},
 	}
-	wr, err := rtree.NewWriter(fout, "newSpinObs", wvars)
+	tout, err := rtree.NewWriter(fout, "newSpinObs", wvars)
 	if err != nil {
 		log.Fatalf("could not create scanner: %+v", err)
 	}
-	defer wr.Close()
+	defer tout.Close()
 
 	
 	// Actual event loop
@@ -120,6 +146,11 @@ func eventLoop(fname string, tname string, evtmax int64) {
 			log.Fatalf("could not scan entry %d: %+v", ievt, err)
 		}
 
+		// Print the partonic event
+		if ievt==0 {
+			printEvent(e_partons)
+		}
+		
 		// Getting slice of particles
 		tops := e_partons.t
 		leptons := e_partons.l
@@ -157,10 +188,20 @@ func eventLoop(fname string, tname string, evtmax int64) {
 		fmt.Printf("(px, py, pz, E)_lv   = (%.2f, %.2f, %.2f, %.2f)\n", lplus_P4.Px(), lplus_P4.Py(), lplus_P4.Pz(), lplus_P4.E() )
 		fmt.Printf("Phi[fmom, lv] = [%.2f, %.2f]\n", lplus_fmom.Phi(), lplus_P4.Phi())
 
-		
-		if ievt==0 {
-			printEvent(e_partons)
-		}
+		// Save the newly computed info into a TTree
+		r3Vec2Slice := func(v r3.Vector) ([]float32) {return []float32 {float32(v.X), float32(v.Y), float32(v.Z)}}
+		nUnit_size, nThree_size = 1, 3
+		e_spin_obsOut.kVec = r3Vec2Slice(k)
+		e_spin_obsOut.rVec = r3Vec2Slice(r)
+		e_spin_obsOut.nVec = r3Vec2Slice(n)
+		e_spin_obsOut.dphi_ll = []float32 {float32(lplus_P4.DeltaPhi(lminus_P4))}
+		e_spin_obsOut.cos_km  = []float32 {float32(cosTheta["k-"])}
+		e_spin_obsOut.cos_rm  = []float32 {float32(cosTheta["r-"])}
+		e_spin_obsOut.cos_nm  = []float32 {float32(cosTheta["n-"])}
+		e_spin_obsOut.cos_kp  = []float32 {float32(cosTheta["k+"])}
+		e_spin_obsOut.cos_rp  = []float32 {float32(cosTheta["r+"])}
+		e_spin_obsOut.cos_np  = []float32 {float32(cosTheta["n+"])}
+		tout.Write()
 	}
 }
 
