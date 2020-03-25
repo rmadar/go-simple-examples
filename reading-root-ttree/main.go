@@ -4,6 +4,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 	"log"
 	"math"
 
@@ -44,13 +45,12 @@ type SpinObservables struct {
 	cos_np  []float32
 }
 
-
 func main() {
 
 	var (
-		fname = flag.String("f", "ttbar_0j_parton.root", "path to ROOT file to analyze")
-		tname = flag.String("t", "spinCorrelation", "ROOT Tree name to analyze")
-		evtmax = flag.Int64("n", 10000, "number of events to analyze")
+		fname   = flag.String("f", "ttbar_0j_parton.root", "path to ROOT file to analyze")
+		tname   = flag.String("t", "spinCorrelation", "ROOT Tree name to analyze")
+		evtmax  = flag.Int64("n", 10000, "number of events to analyze")
 		verbose = flag.Bool("v", false, "verbose mode")
 	)
 
@@ -82,7 +82,7 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 	defer sc.Close()
 
 	// Ceate a new file, new writer to save new variables in a tree
-	fnameOut := "test.root"
+	fnameOut := strings.ReplaceAll(fname, ".root", "_processed.root")
 	fout, err := groot.Create(fnameOut)
 	if err != nil {
 		log.Fatalf("could not create ROOT file %q: %w", fnameOut, err)
@@ -146,7 +146,7 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		}
 
 		// Print the partonic event
-		if (ievt == 0 && verbose) {
+		if ievt == 0 && verbose {
 			printEvent(e_partons)
 		}
 
@@ -156,12 +156,24 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 
 		// Re-computing spin observables
 		var (
-			loadVec   = lv.NewFourVecPtEtaPhiM
-			tplus_P4  = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), float64(tops.m[0]))
-			tminus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), float64(tops.m[1]))
-			lplus_P4  = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
-			lminus_P4 = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), float64(leptons.m[1]))
+			loadVec = lv.NewFourVecPtEtaPhiM
+			tplus_P4, tminus_P4 lv.FourVec
+			lplus_P4, lminus_P4 lv.FourVec
 		)
+		if tops.pid[0]>0 {
+			tplus_P4 = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), float64(tops.m[0]))
+			tminus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), float64(tops.m[1]))
+		} else {
+			tminus_P4 = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), float64(tops.m[0]))
+			tplus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), float64(tops.m[1]))
+		}
+		if leptons.pid[0]>0 {
+			lminus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
+			lplus_P4 = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), float64(leptons.m[1]))
+		} else {
+			lplus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
+			lminus_P4 = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), float64(leptons.m[1]))
+		}
 		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lplus_P4, lminus_P4)
 
 		// Compare with stored variables
@@ -173,6 +185,11 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 			fmt.Println("k+: ", e_spin_obs.cos_kp[0], cosTheta["k+"])
 			fmt.Println("r+: ", e_spin_obs.cos_rp[0], cosTheta["r+"])
 			fmt.Println("n+: ", e_spin_obs.cos_np[0], cosTheta["n+"])
+
+			//To further check
+			// a) 4-momentum of tplus/tminus and lplus/lminus
+			// b) lplus/lminus in the tplus/tminus RF
+			// c) angles
 		}
 
 		// Compare spin basis vectors
@@ -184,15 +201,25 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 			fmt.Println(r.Add(r_ref.Mul(-1)))
 			fmt.Println(n.Add(n_ref.Mul(-1)))
 		}
-		
+
 		// Compare four-vectors obtained with fmom
-		lplus_fmom := fmom.NewPtEtaPhiM(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
-		if verbose {
-			fmt.Printf("(px, py, pz, E)_fmom = (%.2f, %.2f, %.2f, %.2f)\n", lplus_fmom.Px(), lplus_fmom.Py(), lplus_fmom.Pz(), lplus_fmom.E())
-			fmt.Printf("(px, py, pz, E)_lv   = (%.2f, %.2f, %.2f, %.2f)\n", lplus_P4.Px(), lplus_P4.Py(), lplus_P4.Pz(), lplus_P4.E())
-			fmt.Printf("Phi[fmom, lv] = [%.2f, %.2f]\n", lplus_fmom.Phi(), lplus_P4.Phi())
+		var lplus_fmom fmom.PtEtaPhiM
+		if leptons.pid[0]<0 {
+			lplus_fmom = fmom.NewPtEtaPhiM(float64(leptons.pt[0]),
+				float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
+		} else {
+			lplus_fmom = fmom.NewPtEtaPhiM(float64(leptons.pt[1]),
+				float64(leptons.eta[1]), float64(leptons.phi[1]), float64(leptons.m[1]))
 		}
-		
+		if verbose {
+			fmt.Printf("(px, py, pz, E)_fmom = (%.2f, %.2f, %.2f, %.2f)\n",
+				lplus_fmom.Px(), lplus_fmom.Py(), lplus_fmom.Pz(), lplus_fmom.E())
+			fmt.Printf("(px, py, pz, E)_lv   = (%.2f, %.2f, %.2f, %.2f)\n",
+				lplus_P4.Px(), lplus_P4.Py(), lplus_P4.Pz(), lplus_P4.E())
+			fmt.Printf("Phi[fmom, lv] = [%.2f, %.2f]\n",
+				lplus_fmom.Phi(), lplus_P4.Phi())
+		}
+
 		// Save the newly computed info into a TTree
 		r3Vec2Slice := func(v r3.Vector) []float32 { return []float32{float32(v.X), float32(v.Y), float32(v.Z)} }
 		nUnit_size, nThree_size = 1, 3
@@ -217,7 +244,7 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 	if err != nil {
 		log.Fatalf("could not close tree-writer: %+v", err)
 	}
-	fmt.Println(" --> done: ", sc.Entry(), " events processed.")
+	fmt.Println(" --> done:", sc.Entry(), "events processed and stored in", fnameOut)
 }
 
 // Compute spin-related cosines
@@ -226,16 +253,13 @@ func computeSpinCosines(tplus, tminus, lplus, lminus lv.FourVec) map[string]floa
 	// Get the proper basis
 	k, r, n := getSpinBasis(tplus, tminus)
 
-	// Get 3-vectors of lminus (lplus) in tplus (tmius) rest-frame
+	// Get 3-vectors of lplus (lminus) in tplus (tmius) rest-frame
 	lplusRF := lplus.ToRestFrameOf(tplus).Pvec
 	lminusRF := lminus.ToRestFrameOf(tminus).Pvec
 
 	// Fill the six cosines
 	getCos := func(a, b r3.Vector, m float64) float64 {
-		// an, bn := a.Norm(), b.Norm()
-		// return a.Dot(b) / (an*bn)
 		return math.Cos(a.Angle(b.Mul(m)).Radians())
-		//return 2.0
 	}
 	cosTheta := map[string]float64{
 		"k+": getCos(lplusRF, k, 1),
@@ -252,14 +276,10 @@ func computeSpinCosines(tplus, tminus, lplus, lminus lv.FourVec) map[string]floa
 // Get spin basis
 func getSpinBasis(t, tbar lv.FourVec) (k, r, n r3.Vector) {
 
-	// ttbar rest frame
-	ttbar := t.Add(tbar)
-	boost_to_ttbar := ttbar.GetBoost()
-
 	// Get top direction in ttbar rest frame
-	top_rest := t.ApplyBoost(boost_to_ttbar.Mul(-1))
-	k = top_rest.Pvec
-	k = k.Normalize()
+	ttbar := t.Add(tbar)
+	top_rest := t.ToRestFrameOf(ttbar)
+	k = top_rest.Pvec.Normalize()
 
 	// Get the beam axis (Oz) and coeff to build ortho-normal basis
 	beam_axis := r3.Vector{0, 0, 1}
