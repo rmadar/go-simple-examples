@@ -44,26 +44,26 @@ type SpinObservables struct {
 	cos_np  []float32
 }
 
-const mtop float64 = 173.
 
 func main() {
 
 	var (
-		fname  = flag.String("f", "ttbar_0j_parton.root", "path to ROOT file to analyze")
-		tname  = flag.String("t", "spinCorrelation", "ROOT Tree name to analyze")
+		fname = flag.String("f", "ttbar_0j_parton.root", "path to ROOT file to analyze")
+		tname = flag.String("t", "spinCorrelation", "ROOT Tree name to analyze")
 		evtmax = flag.Int64("n", 10000, "number of events to analyze")
+		verbose = flag.Bool("v", false, "verbose mode")
 	)
 
 	flag.Parse()
 
-	eventLoop(*fname, *tname, *evtmax)
+	eventLoop(*fname, *tname, *evtmax, *verbose)
 }
 
 // Event loop
-func eventLoop(fname string, tname string, evtmax int64) {
+func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 
 	// Open the root file and get the tree
-	fmt.Println("Opening TTree", tname, "in ROOT file", fname)
+	fmt.Println("Processing the TTree", tname, "in the ROOT file", fname)
 	file := openRootFile(fname)
 	tree := getTtree(file, tname)
 
@@ -146,7 +146,7 @@ func eventLoop(fname string, tname string, evtmax int64) {
 		}
 
 		// Print the partonic event
-		if ievt == 0 {
+		if (ievt == 0 && verbose) {
 			printEvent(e_partons)
 		}
 
@@ -165,28 +165,34 @@ func eventLoop(fname string, tname string, evtmax int64) {
 		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lplus_P4, lminus_P4)
 
 		// Compare with stored variables
-		fmt.Println("\nComparing stored and recomputed spin variables:")
-		fmt.Println("k-: ", e_spin_obs.cos_km[0], cosTheta["k-"])
-		fmt.Println("r-: ", e_spin_obs.cos_rm[0], cosTheta["r-"])
-		fmt.Println("n-: ", e_spin_obs.cos_nm[0], cosTheta["n-"])
-		fmt.Println("k+: ", e_spin_obs.cos_kp[0], cosTheta["k+"])
-		fmt.Println("r+: ", e_spin_obs.cos_rp[0], cosTheta["r+"])
-		fmt.Println("n+: ", e_spin_obs.cos_np[0], cosTheta["n+"])
+		if verbose {
+			fmt.Println("\nComparing stored and recomputed spin variables:")
+			fmt.Println("k-: ", e_spin_obs.cos_km[0], cosTheta["k-"])
+			fmt.Println("r-: ", e_spin_obs.cos_rm[0], cosTheta["r-"])
+			fmt.Println("n-: ", e_spin_obs.cos_nm[0], cosTheta["n-"])
+			fmt.Println("k+: ", e_spin_obs.cos_kp[0], cosTheta["k+"])
+			fmt.Println("r+: ", e_spin_obs.cos_rp[0], cosTheta["r+"])
+			fmt.Println("n+: ", e_spin_obs.cos_np[0], cosTheta["n+"])
+		}
 
 		// Compare spin basis vectors
 		k, r, n := getSpinBasis(tplus_P4, tminus_P4)
 		getVector := func(x []float32) r3.Vector { return r3.Vector{float64(x[0]), float64(x[1]), float64(x[2])} }
 		k_ref, r_ref, n_ref := getVector(e_spin_obs.kVec), getVector(e_spin_obs.rVec), getVector(e_spin_obs.nVec)
-		fmt.Println(k.Add(k_ref.Mul(-1)))
-		fmt.Println(r.Add(r_ref.Mul(-1)))
-		fmt.Println(n.Add(n_ref.Mul(-1)))
-
+		if verbose {
+			fmt.Println(k.Add(k_ref.Mul(-1)))
+			fmt.Println(r.Add(r_ref.Mul(-1)))
+			fmt.Println(n.Add(n_ref.Mul(-1)))
+		}
+		
 		// Compare four-vectors obtained with fmom
 		lplus_fmom := fmom.NewPtEtaPhiM(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
-		fmt.Printf("(px, py, pz, E)_fmom = (%.2f, %.2f, %.2f, %.2f)\n", lplus_fmom.Px(), lplus_fmom.Py(), lplus_fmom.Pz(), lplus_fmom.E())
-		fmt.Printf("(px, py, pz, E)_lv   = (%.2f, %.2f, %.2f, %.2f)\n", lplus_P4.Px(), lplus_P4.Py(), lplus_P4.Pz(), lplus_P4.E())
-		fmt.Printf("Phi[fmom, lv] = [%.2f, %.2f]\n", lplus_fmom.Phi(), lplus_P4.Phi())
-
+		if verbose {
+			fmt.Printf("(px, py, pz, E)_fmom = (%.2f, %.2f, %.2f, %.2f)\n", lplus_fmom.Px(), lplus_fmom.Py(), lplus_fmom.Pz(), lplus_fmom.E())
+			fmt.Printf("(px, py, pz, E)_lv   = (%.2f, %.2f, %.2f, %.2f)\n", lplus_P4.Px(), lplus_P4.Py(), lplus_P4.Pz(), lplus_P4.E())
+			fmt.Printf("Phi[fmom, lv] = [%.2f, %.2f]\n", lplus_fmom.Phi(), lplus_P4.Phi())
+		}
+		
 		// Save the newly computed info into a TTree
 		r3Vec2Slice := func(v r3.Vector) []float32 { return []float32{float32(v.X), float32(v.Y), float32(v.Z)} }
 		nUnit_size, nThree_size = 1, 3
@@ -211,6 +217,7 @@ func eventLoop(fname string, tname string, evtmax int64) {
 	if err != nil {
 		log.Fatalf("could not close tree-writer: %+v", err)
 	}
+	fmt.Println(" --> done: ", sc.Entry(), " events processed.")
 }
 
 // Compute spin-related cosines
