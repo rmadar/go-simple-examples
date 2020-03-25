@@ -2,18 +2,18 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math"
-	
+
+	"go-hep.org/x/hep/fmom"
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
-	"go-hep.org/x/hep/fmom"
-	
-	"github.com/rmadar/go-lorentz-vector/lv"
-	"github.com/golang/geo/r3"
-)
 
+	"github.com/golang/geo/r3"
+	"github.com/rmadar/go-lorentz-vector/lv"
+)
 
 type PartonEvent struct {
 	t Particles
@@ -49,15 +49,15 @@ const mtop float64 = 173.
 func main() {
 
 	var (
-		fname  = "ttbar_0j_parton.root"
-		tname  = "spinCorrelation"
-		evtmax = int64(10000)
+		fname  = flag.String("f", "ttbar_0j_parton.root", "path to ROOT file to analyze")
+		tname  = flag.String("t", "spinCorrelation", "ROOT Tree name to analyze")
+		evtmax = flag.Int64("n", 10000, "number of events to analyze")
 	)
 
-	eventLoop(fname, tname, evtmax)
+	flag.Parse()
+
+	eventLoop(*fname, *tname, *evtmax)
 }
-
-
 
 // Event loop
 func eventLoop(fname string, tname string, evtmax int64) {
