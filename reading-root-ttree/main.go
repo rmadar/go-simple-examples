@@ -15,18 +15,12 @@ import (
 	"github.com/rmadar/go-lorentz-vector/lv"
 )
 
-type PartonEvent struct {
+type Event struct {
 	t Particles
 	b Particles
 	W Particles
 	l Particles
 	v Particles
-	tp_PxPyPzE []float32 // For xchecks
-	tm_PxPyPzE []float32 // For xchecks
-	lp_PxPyPzE []float32 // For xchecks
-	lm_PxPyPzE []float32 // For xchecks
-	lpRF_PxPyPzE []float32 // For xchecks
-	lmRF_PxPyPzE []float32 // For xchecks
 }
 
 type Particles struct {
@@ -38,16 +32,16 @@ type Particles struct {
 }
 
 type SpinObservables struct {
-	kVec    []float32
-	rVec    []float32
-	nVec    []float32
-	dphi_ll []float32
-	cos_km  []float32
-	cos_kp  []float32
-	cos_rm  []float32
-	cos_rp  []float32
-	cos_nm  []float32
-	cos_np  []float32
+	kVec    [3]float64
+	rVec    [3]float64
+	nVec    [3]float64
+	dphi_ll float64
+	cos_km  float64
+	cos_kp  float64
+	cos_rm  float64
+	cos_rp  float64
+	cos_nm  float64
+	cos_np  float64
 }
 
 func main() {
@@ -74,18 +68,15 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 
 	// Create a scanner to perform the event loop on the input tree
 	var (
-		e_partons  PartonEvent
-		e_spin_obs SpinObservables
-		rvars      = make([]rtree.ScanVar, 0)
+		e Event
+		rvars = getReadVariables(&e)
 	)
-	rvars = append(rvars, getReadPartonVariables(&e_partons)...)
-	rvars = append(rvars, getReadAngularVariables(&e_spin_obs)...)
 	sc, err := rtree.NewScannerVars(tree, rvars...)
 	if err != nil {
 		log.Fatalf("could not create scanner: %+v", err)
 	}
 	defer sc.Close()
-
+	
 	// Ceate a new file, new writer to save new variables in a tree
 	fnameOut := strings.ReplaceAll(fname, ".root", "_processed.root")
 	fout, err := groot.Create(fnameOut)
@@ -93,43 +84,18 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		log.Fatalf("could not create ROOT file %q: %w", fnameOut, err)
 	}
 	defer fout.Close()
-	var (
-		e_spin_obsOut SpinObservables
-		nUnit_size  int32
-		nThree_size int32
-	)
-	// this structure of slices is not very good but is necessary
-	// to keep the same 'SpinObservables' structure for reading/writting.
-	// (this is due to how the input tree is produced)
+	var spin_var SpinObservables
 	wvars := []rtree.WriteVar{
-
-		// Counter for slices
-		{Name: "N1", Value: &nUnit_size},
-		{Name: "N3", Value: &nThree_size},
-
-		// Locally computed variables
-		{Name: "kvec", Value: &e_spin_obsOut.kVec, Count: "N3"},
-		{Name: "rvec", Value: &e_spin_obsOut.rVec, Count: "N3"},
-		{Name: "nvec", Value: &e_spin_obsOut.nVec, Count: "N3"},
-		{Name: "dphi_ll", Value: &e_spin_obsOut.dphi_ll, Count: "N1"},
-		{Name: "cosO_km", Value: &e_spin_obsOut.cos_km, Count: "N1"},
-		{Name: "cosO_kp", Value: &e_spin_obsOut.cos_kp, Count: "N1"},
-		{Name: "cosO_rm", Value: &e_spin_obsOut.cos_rm, Count: "N1"},
-		{Name: "cosO_rp", Value: &e_spin_obsOut.cos_rp, Count: "N1"},
-		{Name: "cosO_nm", Value: &e_spin_obsOut.cos_nm, Count: "N1"},
-		{Name: "cosO_np", Value: &e_spin_obsOut.cos_np, Count: "N1"},
-
-		// Get also the original variables
-		{Name: "kvec_orig", Value: &e_spin_obs.kVec, Count: "N3"},
-		{Name: "rvec_orig", Value: &e_spin_obs.rVec, Count: "N3"},
-		{Name: "nvec_orig", Value: &e_spin_obs.nVec, Count: "N3"},
-		{Name: "dphi_ll_orig", Value: &e_spin_obs.dphi_ll, Count: "N1"},
-		{Name: "cosO_km_orig", Value: &e_spin_obs.cos_km, Count: "N1"},
-		{Name: "cosO_kp_orig", Value: &e_spin_obs.cos_kp, Count: "N1"},
-		{Name: "cosO_rm_orig", Value: &e_spin_obs.cos_rm, Count: "N1"},
-		{Name: "cosO_rp_orig", Value: &e_spin_obs.cos_rp, Count: "N1"},
-		{Name: "cosO_nm_orig", Value: &e_spin_obs.cos_nm, Count: "N1"},
-		{Name: "cosO_np_orig", Value: &e_spin_obs.cos_np, Count: "N1"},
+		{Name: "kvec"   , Value: &spin_var.kVec},
+		{Name: "rvec"   , Value: &spin_var.rVec},
+		{Name: "nvec"   , Value: &spin_var.nVec},
+		{Name: "dphi_ll", Value: &spin_var.dphi_ll},
+		{Name: "cosO_km", Value: &spin_var.cos_km},
+		{Name: "cosO_kp", Value: &spin_var.cos_kp},
+		{Name: "cosO_rm", Value: &spin_var.cos_rm},
+		{Name: "cosO_rp", Value: &spin_var.cos_rp},
+		{Name: "cosO_nm", Value: &spin_var.cos_nm},
+		{Name: "cosO_np", Value: &spin_var.cos_np},
 	}
 	tout, err := rtree.NewWriter(fout, tname, wvars)
 	if err != nil {
@@ -150,101 +116,55 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		}
 
 		// Print the partonic event
-		if ievt == 0 && verbose {
-			printEvent(e_partons)
+		if ievt%100 == 0 && verbose {
+			fmt.Println("\nEvent", ievt)
+			printEvent(e)
 		}
-
-		// Getting slice of particles
-		tops := e_partons.t
-		leptons := e_partons.l
 
 		// Re-computing spin observables
 		var (
-			loadVec = lv.NewFourVecPtEtaPhiM
+			tops = e.t
+			leptons = e.l
 			tplus_P4, tminus_P4 lv.FourVec
 			lplus_P4, lminus_P4 lv.FourVec
 		)
+		// Get top/anti-top and lepton/ant-lepton four-vectors
+		get4Vec := func(parts Particles, i int32) lv.FourVec {
+			return lv.NewFourVecPtEtaPhiM(
+				float64(parts.pt[i]),
+				float64(parts.eta[i]),
+				float64(parts.phi[i]),
+				float64(parts.m[i])) 
+		}		
 		if tops.pid[0]>0 {
-			tplus_P4 = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), float64(tops.m[0]))
-			tminus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), float64(tops.m[1]))
+			tplus_P4  = get4Vec(tops, 0)
+			tminus_P4 = get4Vec(tops, 1)
 		} else {
-			tminus_P4 = loadVec(float64(tops.pt[0]), float64(tops.eta[0]), float64(tops.phi[0]), float64(tops.m[0]))
-			tplus_P4 = loadVec(float64(tops.pt[1]), float64(tops.eta[1]), float64(tops.phi[1]), float64(tops.m[1]))
+			tplus_P4  = get4Vec(tops, 1)
+			tminus_P4 = get4Vec(tops, 0)
 		}
 		if leptons.pid[0]>0 {
-			lminus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
-			lplus_P4 = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), float64(leptons.m[1]))
+			lminus_P4 = get4Vec(leptons, 0) 
+			lplus_P4  = get4Vec(leptons, 1) 
 		} else {
-			lplus_P4 = loadVec(float64(leptons.pt[0]), float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
-			lminus_P4 = loadVec(float64(leptons.pt[1]), float64(leptons.eta[1]), float64(leptons.phi[1]), float64(leptons.m[1]))
+			lminus_P4 = get4Vec(leptons, 1) 
+			lplus_P4  = get4Vec(leptons, 0) 
 		}
+		// Perform the actual computation (spin basis and angles)
 		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lplus_P4, lminus_P4)
 
 		// Save the newly computed info into a TTree
 		k, r, n := getSpinBasis(tplus_P4, tminus_P4)
-		r3Vec2Slice := func(v r3.Vector) []float32 { return []float32{float32(v.X), float32(v.Y), float32(v.Z)} }
-		nUnit_size, nThree_size = 1, 3
-		e_spin_obsOut.kVec = r3Vec2Slice(k)
-		e_spin_obsOut.rVec = r3Vec2Slice(r)
-		e_spin_obsOut.nVec = r3Vec2Slice(n)
-		e_spin_obsOut.dphi_ll = []float32{float32(lplus_P4.DeltaPhi(lminus_P4))}
-		e_spin_obsOut.cos_km = []float32{float32(cosTheta["k-"])}
-		e_spin_obsOut.cos_rm = []float32{float32(cosTheta["r-"])}
-		e_spin_obsOut.cos_nm = []float32{float32(cosTheta["n-"])}
-		e_spin_obsOut.cos_kp = []float32{float32(cosTheta["k+"])}
-		e_spin_obsOut.cos_rp = []float32{float32(cosTheta["r+"])}
-		e_spin_obsOut.cos_np = []float32{float32(cosTheta["n+"])}
-
-
-		// Compare computed with stored quantities
-		if verbose {
-
-			// Angle cosines
-			fmt.Println("\n\nEvent:", ievt)
-			fmt.Println("============")
-			fmt.Println("Comparing stored and recomputed the 6 angle cosines:")
-			fmt.Println("  k-:", e_spin_obs.cos_km[0], cosTheta["k-"])
-			fmt.Println("  r-:", e_spin_obs.cos_rm[0], cosTheta["r-"])
-			fmt.Println("  n-:", e_spin_obs.cos_nm[0], cosTheta["n-"])
-			fmt.Println("  k+:", e_spin_obs.cos_kp[0], cosTheta["k+"])
-			fmt.Println("  r+:", e_spin_obs.cos_rp[0], cosTheta["r+"])
-			fmt.Println("  n+:", e_spin_obs.cos_np[0], cosTheta["n+"])
-
-			//4-momentum checks
-			fmt.Println("Comparing top & leptons 4-vectors:")
-			fmt.Println("  Positive top quark:")
-			fmt.Println("   -> local: ", tplus_P4)
-			fmt.Println("   -> origi: ", e_partons.tp_PxPyPzE)
-			fmt.Println("  Positive lepton:")
-			fmt.Println("   -> local: ", lplus_P4)
-			fmt.Println("   -> origi: ", e_partons.lp_PxPyPzE)
-			fmt.Println("  Negative top quark:")
-			fmt.Println("   -> local: ", tminus_P4)
-			fmt.Println("   -> origi: ", e_partons.tm_PxPyPzE)
-			fmt.Println("  Negative lepton:")
-			fmt.Println("   -> local: ", lminus_P4)
-			fmt.Println("   -> origi: ", e_partons.lm_PxPyPzE)
-			
-			// lplus/lminus in the tplus/tminus RF
-			fmt.Println("Comparing 4-vector of lplus (lminus) in tplus (tminus) restframe")
-			fmt.Println("  Positive lepton:")
-			fmt.Println("   -> local: ", lplus_P4.ToRestFrameOf(tplus_P4))
-			fmt.Println("   -> origi: ", e_partons.lpRF_PxPyPzE)
-			fmt.Println("  Negative lepton:")
-			fmt.Println("   -> local: ", lminus_P4.ToRestFrameOf(tminus_P4))
-			fmt.Println("   -> origi: ", e_partons.lmRF_PxPyPzE)
-
-			// Compare spin basis vectors
-			getVector := func(x []float32) r3.Vector { return r3.Vector{float64(x[0]), float64(x[1]), float64(x[2])} }
-			k_ref, r_ref, n_ref := getVector(e_spin_obs.kVec), getVector(e_spin_obs.rVec), getVector(e_spin_obs.nVec)
-			fmt.Println("Comparing spin-basis vectors (showing axis-by-axis differences):")
-			fmt.Println("  dk =", k.Add(k_ref.Mul(-1)))
-			fmt.Println("  dr =", r.Add(r_ref.Mul(-1)))
-			fmt.Println("  dn =", n.Add(n_ref.Mul(-1)))			
-
-			// Adding blank line
-			fmt.Println()
-		}
+		spin_var.kVec = [3]float64{k.X, k.Y, k.Z}
+		spin_var.rVec = [3]float64{r.X, r.Y, r.Z}
+		spin_var.nVec = [3]float64{n.X, n.Y, n.Z}
+		spin_var.dphi_ll = lplus_P4.DeltaPhi(lminus_P4)
+		spin_var.cos_km = cosTheta["k-"]
+		spin_var.cos_rm = cosTheta["r-"]
+		spin_var.cos_nm = cosTheta["n-"]
+		spin_var.cos_kp = cosTheta["k+"]
+		spin_var.cos_rp = cosTheta["r+"]
+		spin_var.cos_np = cosTheta["n+"]
 
 		_, err = tout.Write()
 		if err != nil {
@@ -311,26 +231,10 @@ func getSpinBasis(t, tbar lv.FourVec) (k, r, n r3.Vector) {
 	return k, r, n
 }
 
-// Helper to define the angular-related variables to load
-func getReadAngularVariables(e *SpinObservables) (vars []rtree.ScanVar) {
-	vars = []rtree.ScanVar{
-		{Name: "kvec", Value: &e.kVec},
-		{Name: "rvec", Value: &e.rVec},
-		{Name: "nvec", Value: &e.nVec},
-		{Name: "dphi_ll", Value: &e.dphi_ll},
-		{Name: "cosO_km", Value: &e.cos_km},
-		{Name: "cosO_kp", Value: &e.cos_kp},
-		{Name: "cosO_rm", Value: &e.cos_rm},
-		{Name: "cosO_rp", Value: &e.cos_rp},
-		{Name: "cosO_nm", Value: &e.cos_nm},
-		{Name: "cosO_np", Value: &e.cos_np},
-	}
-	return
-}
 
-// Helper to define the parton-related variables to load
-func getReadPartonVariables(e *PartonEvent) (vars []rtree.ScanVar) {
-	vars = []rtree.ScanVar{
+// Helper to define the event variables to load
+func getReadVariables(e *Event) []rtree.ScanVar {
+	return []rtree.ScanVar{
 		// Top-quarks
 		{Name: "t_pt", Value: &e.t.pt},
 		{Name: "t_eta", Value: &e.t.eta},
@@ -361,19 +265,11 @@ func getReadPartonVariables(e *PartonEvent) (vars []rtree.ScanVar) {
 		{Name: "v_phi", Value: &e.v.phi},
 		{Name: "v_pid", Value: &e.v.pid},
 		{Name: "v_m", Value: &e.v.m},
-		// For xchecks
-		{Name: "tplus_PxPyPzE", Value: &e.tp_PxPyPzE},
-		{Name: "tminus_PxPyPzE", Value: &e.tm_PxPyPzE},
-		{Name: "lplus_PxPyPzE", Value: &e.lp_PxPyPzE},
-		{Name: "lminus_PxPyPzE", Value: &e.lm_PxPyPzE},
-		{Name: "lminusRF_PxPyPzE", Value: &e.lmRF_PxPyPzE},
-		{Name: "lplusRF_PxPyPzE", Value: &e.lpRF_PxPyPzE},
 	}
-	return
 }
 
 // Event printing
-func printEvent(e PartonEvent) {
+func printEvent(e Event) {
 	fmt.Println(" * Top quarks")
 	fmt.Println("   - pT : ", e.t.pt)
 	fmt.Println("   - Eta: ", e.t.eta)
