@@ -242,20 +242,10 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 			fmt.Println("  dr =", r.Add(r_ref.Mul(-1)))
 			fmt.Println("  dn =", n.Add(n_ref.Mul(-1)))			
 
-			// Compare 3-vector angles
-			lpRF_P4 := lplus_P4.ToRestFrameOf(tplus_P4)
-			lmRF_P4 := lminus_P4.ToRestFrameOf(tminus_P4)
-			getCos := func (r1, r2 r3.Vector, a float64) float64 {
-				return math.Cos(r1.Angle(r2.Mul(a)).Radians())
-			}
-			fmt.Println("Comparing angles (radians): ")
-			fmt.Println("  k+[local, orig]:", getCos(lpRF_P4.Pvec, k,  1), e_spin_obs.cos_kp[0])
-			fmt.Println("  k-[local, orig]:", getCos(lmRF_P4.Pvec, k, -1), e_spin_obs.cos_km[0])
-
 			// Adding blank line
 			fmt.Println()
 		}
-		
+
 		_, err = tout.Write()
 		if err != nil {
 			log.Fatalf("could not write event %d: %+v", ievt, err)
