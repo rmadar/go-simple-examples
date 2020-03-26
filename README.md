@@ -17,3 +17,6 @@ tool [[arXiv:1405.0301](https://arxiv.org/abs/1405.0301)], ran at the leading or
 These collisions are described at the parton level only and each event is described by
   + partonic intial state: parton flavour and momentum
   + partonic final state: 4-vectors for each particle in the decay t->Wb->lvb
+
+The program [reading-root-ttree/main.go](reading-root-ttree/main.go) load some variables of the TTree, compute
+some angular variables probing the spin correlation between the top and the antitop quarks [e.g. [arXiv:1612.07004](https://arxiv.org/abs/1612.07004)]. These involves Lorentz transformation and simple geometrical calculations
