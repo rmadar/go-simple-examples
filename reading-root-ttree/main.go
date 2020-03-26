@@ -4,11 +4,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"strings"
 	"log"
 	"math"
+	"strings"
 
-	"go-hep.org/x/hep/fmom"
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
 
@@ -22,6 +21,12 @@ type PartonEvent struct {
 	W Particles
 	l Particles
 	v Particles
+	tp_PxPyPzE []float32 // For xchecks
+	tm_PxPyPzE []float32 // For xchecks
+	lp_PxPyPzE []float32 // For xchecks
+	lm_PxPyPzE []float32 // For xchecks
+	lpRF_PxPyPzE []float32 // For xchecks
+	lmRF_PxPyPzE []float32 // For xchecks
 }
 
 type Particles struct {
@@ -90,7 +95,6 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 	defer fout.Close()
 	var (
 		e_spin_obsOut SpinObservables
-		//e_spin_obsCopy SpinObservables
 		nUnit_size  int32
 		nThree_size int32
 	)
@@ -115,7 +119,7 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		{Name: "cosO_nm", Value: &e_spin_obsOut.cos_nm, Count: "N1"},
 		{Name: "cosO_np", Value: &e_spin_obsOut.cos_np, Count: "N1"},
 
-		// Copy of original variables
+		// Get also the original variables
 		{Name: "kvec_orig", Value: &e_spin_obs.kVec, Count: "N3"},
 		{Name: "rvec_orig", Value: &e_spin_obs.rVec, Count: "N3"},
 		{Name: "nvec_orig", Value: &e_spin_obs.nVec, Count: "N3"},
@@ -127,7 +131,7 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		{Name: "cosO_nm_orig", Value: &e_spin_obs.cos_nm, Count: "N1"},
 		{Name: "cosO_np_orig", Value: &e_spin_obs.cos_np, Count: "N1"},
 	}
-	tout, err := rtree.NewWriter(fout, "newSpinObs", wvars)
+	tout, err := rtree.NewWriter(fout, tname, wvars)
 	if err != nil {
 		log.Fatalf("could not create scanner: %+v", err)
 	}
@@ -176,51 +180,8 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		}
 		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lplus_P4, lminus_P4)
 
-		// Compare with stored variables
-		if verbose {
-			fmt.Println("\nComparing stored and recomputed spin variables:")
-			fmt.Println("k-: ", e_spin_obs.cos_km[0], cosTheta["k-"])
-			fmt.Println("r-: ", e_spin_obs.cos_rm[0], cosTheta["r-"])
-			fmt.Println("n-: ", e_spin_obs.cos_nm[0], cosTheta["n-"])
-			fmt.Println("k+: ", e_spin_obs.cos_kp[0], cosTheta["k+"])
-			fmt.Println("r+: ", e_spin_obs.cos_rp[0], cosTheta["r+"])
-			fmt.Println("n+: ", e_spin_obs.cos_np[0], cosTheta["n+"])
-
-			//To further check
-			// a) 4-momentum of tplus/tminus and lplus/lminus
-			// b) lplus/lminus in the tplus/tminus RF
-			// c) angles
-		}
-
-		// Compare spin basis vectors
-		k, r, n := getSpinBasis(tplus_P4, tminus_P4)
-		getVector := func(x []float32) r3.Vector { return r3.Vector{float64(x[0]), float64(x[1]), float64(x[2])} }
-		k_ref, r_ref, n_ref := getVector(e_spin_obs.kVec), getVector(e_spin_obs.rVec), getVector(e_spin_obs.nVec)
-		if verbose {
-			fmt.Println(k.Add(k_ref.Mul(-1)))
-			fmt.Println(r.Add(r_ref.Mul(-1)))
-			fmt.Println(n.Add(n_ref.Mul(-1)))
-		}
-
-		// Compare four-vectors obtained with fmom
-		var lplus_fmom fmom.PtEtaPhiM
-		if leptons.pid[0]<0 {
-			lplus_fmom = fmom.NewPtEtaPhiM(float64(leptons.pt[0]),
-				float64(leptons.eta[0]), float64(leptons.phi[0]), float64(leptons.m[0]))
-		} else {
-			lplus_fmom = fmom.NewPtEtaPhiM(float64(leptons.pt[1]),
-				float64(leptons.eta[1]), float64(leptons.phi[1]), float64(leptons.m[1]))
-		}
-		if verbose {
-			fmt.Printf("(px, py, pz, E)_fmom = (%.2f, %.2f, %.2f, %.2f)\n",
-				lplus_fmom.Px(), lplus_fmom.Py(), lplus_fmom.Pz(), lplus_fmom.E())
-			fmt.Printf("(px, py, pz, E)_lv   = (%.2f, %.2f, %.2f, %.2f)\n",
-				lplus_P4.Px(), lplus_P4.Py(), lplus_P4.Pz(), lplus_P4.E())
-			fmt.Printf("Phi[fmom, lv] = [%.2f, %.2f]\n",
-				lplus_fmom.Phi(), lplus_P4.Phi())
-		}
-
 		// Save the newly computed info into a TTree
+		k, r, n := getSpinBasis(tplus_P4, tminus_P4)
 		r3Vec2Slice := func(v r3.Vector) []float32 { return []float32{float32(v.X), float32(v.Y), float32(v.Z)} }
 		nUnit_size, nThree_size = 1, 3
 		e_spin_obsOut.kVec = r3Vec2Slice(k)
@@ -234,6 +195,67 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		e_spin_obsOut.cos_rp = []float32{float32(cosTheta["r+"])}
 		e_spin_obsOut.cos_np = []float32{float32(cosTheta["n+"])}
 
+
+		// Compare computed with stored quantities
+		if verbose {
+
+			// Angle cosines
+			fmt.Println("\n\nEvent:", ievt)
+			fmt.Println("============")
+			fmt.Println("Comparing stored and recomputed the 6 angle cosines:")
+			fmt.Println("  k-:", e_spin_obs.cos_km[0], cosTheta["k-"])
+			fmt.Println("  r-:", e_spin_obs.cos_rm[0], cosTheta["r-"])
+			fmt.Println("  n-:", e_spin_obs.cos_nm[0], cosTheta["n-"])
+			fmt.Println("  k+:", e_spin_obs.cos_kp[0], cosTheta["k+"])
+			fmt.Println("  r+:", e_spin_obs.cos_rp[0], cosTheta["r+"])
+			fmt.Println("  n+:", e_spin_obs.cos_np[0], cosTheta["n+"])
+
+			//4-momentum checks
+			fmt.Println("Comparing top & leptons 4-vectors:")
+			fmt.Println("  Positive top quark:")
+			fmt.Println("   -> local: ", tplus_P4)
+			fmt.Println("   -> origi: ", e_partons.tp_PxPyPzE)
+			fmt.Println("  Positive lepton:")
+			fmt.Println("   -> local: ", lplus_P4)
+			fmt.Println("   -> origi: ", e_partons.lp_PxPyPzE)
+			fmt.Println("  Negative top quark:")
+			fmt.Println("   -> local: ", tminus_P4)
+			fmt.Println("   -> origi: ", e_partons.tm_PxPyPzE)
+			fmt.Println("  Negative lepton:")
+			fmt.Println("   -> local: ", lminus_P4)
+			fmt.Println("   -> origi: ", e_partons.lm_PxPyPzE)
+			
+			// lplus/lminus in the tplus/tminus RF
+			fmt.Println("Comparing 4-vector of lplus (lminus) in tplus (tminus) restframe")
+			fmt.Println("  Positive lepton:")
+			fmt.Println("   -> local: ", lplus_P4.ToRestFrameOf(tplus_P4))
+			fmt.Println("   -> origi: ", e_partons.lpRF_PxPyPzE)
+			fmt.Println("  Negative lepton:")
+			fmt.Println("   -> local: ", lminus_P4.ToRestFrameOf(tminus_P4))
+			fmt.Println("   -> origi: ", e_partons.lmRF_PxPyPzE)
+
+			// Compare spin basis vectors
+			getVector := func(x []float32) r3.Vector { return r3.Vector{float64(x[0]), float64(x[1]), float64(x[2])} }
+			k_ref, r_ref, n_ref := getVector(e_spin_obs.kVec), getVector(e_spin_obs.rVec), getVector(e_spin_obs.nVec)
+			fmt.Println("Comparing spin-basis vectors (showing axis-by-axis differences):")
+			fmt.Println("  dk =", k.Add(k_ref.Mul(-1)))
+			fmt.Println("  dr =", r.Add(r_ref.Mul(-1)))
+			fmt.Println("  dn =", n.Add(n_ref.Mul(-1)))			
+
+			// Compare 3-vector angles
+			lpRF_P4 := lplus_P4.ToRestFrameOf(tplus_P4)
+			lmRF_P4 := lminus_P4.ToRestFrameOf(tminus_P4)
+			getCos := func (r1, r2 r3.Vector, a float64) float64 {
+				return math.Cos(r1.Angle(r2.Mul(a)).Radians())
+			}
+			fmt.Println("Comparing angles (radians): ")
+			fmt.Println("  k+[local, orig]:", getCos(lpRF_P4.Pvec, k,  1), e_spin_obs.cos_kp[0])
+			fmt.Println("  k-[local, orig]:", getCos(lmRF_P4.Pvec, k, -1), e_spin_obs.cos_km[0])
+
+			// Adding blank line
+			fmt.Println()
+		}
+		
 		_, err = tout.Write()
 		if err != nil {
 			log.Fatalf("could not write event %d: %+v", ievt, err)
@@ -244,7 +266,8 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 	if err != nil {
 		log.Fatalf("could not close tree-writer: %+v", err)
 	}
-	fmt.Println(" --> done:", sc.Entry(), "events processed and stored in", fnameOut)
+	
+	fmt.Println(" --> Event loop is done:", sc.Entry(), "events processed and stored in", fnameOut)
 }
 
 // Compute spin-related cosines
@@ -348,6 +371,13 @@ func getReadPartonVariables(e *PartonEvent) (vars []rtree.ScanVar) {
 		{Name: "v_phi", Value: &e.v.phi},
 		{Name: "v_pid", Value: &e.v.pid},
 		{Name: "v_m", Value: &e.v.m},
+		// For xchecks
+		{Name: "tplus_PxPyPzE", Value: &e.tp_PxPyPzE},
+		{Name: "tminus_PxPyPzE", Value: &e.tm_PxPyPzE},
+		{Name: "lplus_PxPyPzE", Value: &e.lp_PxPyPzE},
+		{Name: "lminus_PxPyPzE", Value: &e.lm_PxPyPzE},
+		{Name: "lminusRF_PxPyPzE", Value: &e.lmRF_PxPyPzE},
+		{Name: "lplusRF_PxPyPzE", Value: &e.lpRF_PxPyPzE},
 	}
 	return
 }
