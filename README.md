@@ -11,7 +11,7 @@ This repository contains few examples in go, mostly connected to high energy phy
 
 ### Reading a `TTree`
 
-In this example, the initial TTree was produced from a LHE file [[arXiv:0609.017](https://arxiv.org/abs/hep-ph/0609017)]
+In this example, the initial `TTree` - stored in [ttbar_0j_parton.root](reading-root-ttree/main.go) - was produced from a LHE file [[arXiv:0609.017](https://arxiv.org/abs/hep-ph/0609017)]
 describing 10000 proton-proton collisions leading to a top-antitop quark pair production, as predicted by MadGraph
 tool [[arXiv:1405.0301](https://arxiv.org/abs/1405.0301)], ran at the leading order.
 These collisions are described at the parton level only and each event is described by
@@ -19,4 +19,4 @@ These collisions are described at the parton level only and each event is descri
   + partonic final state: 4-vectors for each particle in the decay t->Wb->lvb
 
 The program [reading-root-ttree/main.go](reading-root-ttree/main.go) loads some variables of the `TTree`, compute
-some angular variables probing the spin correlation between the top and the antitop quarks [e.g. [arXiv:1612.07004](https://arxiv.org/abs/1612.07004)]. These involves Lorentz transformation and simple geometrical calculations, and this progams relies then on the [lorentzvector `lv` package](https://godoc.org/github.com/rmadar/go-lorentz-vector/lv) 
+some angular variables probing the spin correlation between the top and the antitop quarks [e.g. [arXiv:1612.07004](https://arxiv.org/abs/1612.07004)]. These involves Lorentz transformation and simple geometrical calculations, and this progams relies then on the [lorentzvector package](https://godoc.org/github.com/rmadar/go-lorentz-vector/lv).
