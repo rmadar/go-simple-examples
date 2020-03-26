@@ -11,6 +11,9 @@ This repository contains few examples in go, mostly connected to high energy phy
 
 ### Reading a TTree
 
-In this example, the initial TTree was produced from a LHE file [[arXiv:hep-ph/0609017](https://arxiv.org/abs/hep-ph/0609017)]
-describing 10000 top-antitop quark productions at the LHE, as predicted by MadGraph
+In this example, the initial TTree was produced from a LHE file [[arXiv:0609.017](https://arxiv.org/abs/hep-ph/0609017)]
+describing 10000 proton-proton collisions leading to a top-antitop quark pair production, as predicted by MadGraph
 tool [[arXiv:1405.0301](https://arxiv.org/abs/1405.0301)], ran at the leading order.
+These collisions are described at the parton level only and each event is described by
+  + partonic intial state: parton flavour and momentum
+  + partonic final state: 4-vectors for each particle in the decay t->Wb->lvb
