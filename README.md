@@ -24,5 +24,5 @@ go run ./main.go
 ```
 will produce a ROOT file containing the new `TTree` with 10 variables:
   + `dphi_ll`: lab-frame angle between the two leptons
-  + `k, `r`, `n`: the three 3-vectors of the spin basis
+  + `k, r, n`: the three 3-vectors of the spin basis
   + `cos(Theta[axis, lepton])`: 6 cosines for 3 axis and 2 leptons
