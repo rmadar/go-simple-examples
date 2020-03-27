@@ -11,6 +11,7 @@ import (
 
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
+	"go-hep.org/x/hep/heppdt"
 	"go-hep.org/x/hep/lhef"
 
 	"github.com/rmadar/go-lorentz-vector/lv"
@@ -110,26 +111,26 @@ loop:
 
 		// Loop over particles
 		for i, pid := range pids {
-			switch pid {
-			case 6: // top-quark
+			switch int(pid) {
+			case heppdt.PDG_t:
 				setPart(&e.t, get4Vec(PxPyPzEM[i]), pid)
-			case -6: // anti top-quark
+			case heppdt.PDG_anti_t:
 				setPart(&e.tbar, get4Vec(PxPyPzEM[i]), pid)
-			case 5: // b-quark
+			case heppdt.PDG_b:
 				setPart(&e.b, get4Vec(PxPyPzEM[i]), pid)
-			case -5: // anti b-quark
+			case heppdt.PDG_anti_b:
 				setPart(&e.bbar, get4Vec(PxPyPzEM[i]), pid)
-			case 24: // W+ boson
+			case heppdt.PDG_W_plus:
 				setPart(&e.W, get4Vec(PxPyPzEM[i]), pid)
-			case -24: // W- boson
+			case heppdt.PDG_W_minus:
 				setPart(&e.Wbar, get4Vec(PxPyPzEM[i]), pid)
-			case -11, -13, -15: // Charged leptons
+			case heppdt.PDG_e_plus, heppdt.PDG_mu_plus, heppdt.PDG_tau_plus:
 				setPart(&e.l, get4Vec(PxPyPzEM[i]), pid)
-			case 11, 13, 15: // Charged anti-leptons
+			case heppdt.PDG_e_minus, heppdt.PDG_mu_minus, heppdt.PDG_tau_minus:
 				setPart(&e.lbar, get4Vec(PxPyPzEM[i]), pid)
-			case 10, 12, 14: // Neutrinos
+			case heppdt.PDG_nu_e, heppdt.PDG_nu_mu, heppdt.PDG_nu_tau:
 				setPart(&e.v, get4Vec(PxPyPzEM[i]), pid)
-			case -10, -12, -14: // Anti-neutrinos
+			case heppdt.PDG_anti_nu_e, heppdt.PDG_anti_nu_mu, heppdt.PDG_anti_nu_tau:
 				setPart(&e.vbar, get4Vec(PxPyPzEM[i]), pid)
 			}
 		}
