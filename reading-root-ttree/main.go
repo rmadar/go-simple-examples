@@ -66,17 +66,17 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 	file := openRootFile(fname)
 	tree := getTtree(file, tname)
 
-	// Create a scanner to perform the event loop on the input tree
+	// Create a tree reader to perform the event loop on the input tree
 	var (
-		e Event
+		e     Event
 		rvars = getReadVariables(&e)
 	)
-	sc, err := rtree.NewScannerVars(tree, rvars...)
+	r, err := rtree.NewReader(tree, rvars, rtree.WithRange(0, evtmax))
 	if err != nil {
-		log.Fatalf("could not create scanner: %+v", err)
+		log.Fatalf("could not create reader: %+v", err)
 	}
-	defer sc.Close()
-	
+	defer r.Close()
+
 	// Ceate a new file, new writer to save new variables in a tree
 	fnameOut := strings.ReplaceAll(fname, ".root", "_processed.root")
 	fout, err := groot.Create(fnameOut)
@@ -86,9 +86,9 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 	defer fout.Close()
 	var spin_var SpinObservables
 	wvars := []rtree.WriteVar{
-		{Name: "kvec"   , Value: &spin_var.kVec},
-		{Name: "rvec"   , Value: &spin_var.rVec},
-		{Name: "nvec"   , Value: &spin_var.nVec},
+		{Name: "kvec", Value: &spin_var.kVec},
+		{Name: "rvec", Value: &spin_var.rVec},
+		{Name: "nvec", Value: &spin_var.nVec},
 		{Name: "dphi_ll", Value: &spin_var.dphi_ll},
 		{Name: "cosO_km", Value: &spin_var.cos_km},
 		{Name: "cosO_kp", Value: &spin_var.cos_kp},
@@ -99,21 +99,16 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 	}
 	tout, err := rtree.NewWriter(fout, tname, wvars)
 	if err != nil {
-		log.Fatalf("could not create scanner: %+v", err)
+		log.Fatalf("could not create tree writer: %+v", err)
 	}
 	defer tout.Close()
 
 	// Actual event loop
-	for sc.Next() && sc.Entry() < evtmax {
-
+	var nevts int64
+	err = r.Read(func(ctx rtree.RCtx) error {
+		nevts++
 		// Entry index
-		ievt := sc.Entry()
-
-		// Load variable of the event
-		err := sc.Scan()
-		if err != nil {
-			log.Fatalf("could not scan entry %d: %+v", ievt, err)
-		}
+		ievt := ctx.Entry
 
 		// Print the partonic event
 		if ievt%100 == 0 && verbose {
@@ -123,8 +118,8 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 
 		// Re-computing spin observables
 		var (
-			tops = e.t
-			leptons = e.l
+			tops                = e.t
+			leptons             = e.l
 			tplus_P4, tminus_P4 lv.FourVec
 			lplus_P4, lminus_P4 lv.FourVec
 		)
@@ -134,21 +129,21 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 				float64(parts.pt[i]),
 				float64(parts.eta[i]),
 				float64(parts.phi[i]),
-				float64(parts.m[i])) 
-		}		
-		if tops.pid[0]>0 {
-			tplus_P4  = get4Vec(tops, 0)
+				float64(parts.m[i]))
+		}
+		if tops.pid[0] > 0 {
+			tplus_P4 = get4Vec(tops, 0)
 			tminus_P4 = get4Vec(tops, 1)
 		} else {
-			tplus_P4  = get4Vec(tops, 1)
+			tplus_P4 = get4Vec(tops, 1)
 			tminus_P4 = get4Vec(tops, 0)
 		}
-		if leptons.pid[0]>0 {
-			lminus_P4 = get4Vec(leptons, 0) 
-			lplus_P4  = get4Vec(leptons, 1) 
+		if leptons.pid[0] > 0 {
+			lminus_P4 = get4Vec(leptons, 0)
+			lplus_P4 = get4Vec(leptons, 1)
 		} else {
-			lminus_P4 = get4Vec(leptons, 1) 
-			lplus_P4  = get4Vec(leptons, 0) 
+			lminus_P4 = get4Vec(leptons, 1)
+			lplus_P4 = get4Vec(leptons, 0)
 		}
 		// Perform the actual computation (spin basis and angles)
 		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lplus_P4, lminus_P4)
@@ -170,14 +165,18 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		if err != nil {
 			log.Fatalf("could not write event %d: %+v", ievt, err)
 		}
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("could not process input tree: %+v", err)
 	}
 
 	err = tout.Close()
 	if err != nil {
 		log.Fatalf("could not close tree-writer: %+v", err)
 	}
-	
-	fmt.Println(" --> Event loop is done:", sc.Entry(), "events processed and stored in", fnameOut)
+
+	fmt.Println(" --> Event loop is done:", nevts, "events processed and stored in", fnameOut)
 }
 
 // Compute spin-related cosines
@@ -231,10 +230,9 @@ func getSpinBasis(t, tbar lv.FourVec) (k, r, n r3.Vector) {
 	return k, r, n
 }
 
-
 // Helper to define the event variables to load
-func getReadVariables(e *Event) []rtree.ScanVar {
-	return []rtree.ScanVar{
+func getReadVariables(e *Event) []rtree.ReadVar {
+	return []rtree.ReadVar{
 		// Top-quarks
 		{Name: "t_pt", Value: &e.t.pt},
 		{Name: "t_eta", Value: &e.t.eta},
