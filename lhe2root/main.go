@@ -144,7 +144,6 @@ func main() {
 		iEvt++
 	}
 
-
 	err = tw.Close()
 	if err != nil {
 		log.Fatalf("could not close tree-writer: %+v", err)
