@@ -4,20 +4,20 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"io"
+	"log"
 	"os"
 	"strings"
-	
-	"go-hep.org/x/hep/lhef"	
+
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
+	"go-hep.org/x/hep/lhef"
 
 	"github.com/rmadar/go-lorentz-vector/lv"
 )
 
 // Event stucture for partonic ttbar->dilepton event
-type Event struct {	
+type Event struct {
 	t    Particle
 	tbar Particle
 	b    Particle
@@ -41,8 +41,8 @@ type Particle struct {
 func main() {
 
 	// Input arguments
-	ifname  := flag.String("f", "ttbar_0j_parton.lhe", "Path to the input LHE file")
-	tname   := flag.String("t", "truth", "Name of the created TTree")
+	ifname := flag.String("f", "ttbar_0j_parton.lhe", "Path to the input LHE file")
+	tname := flag.String("t", "truth", "Name of the created TTree")
 	verbose := flag.Bool("v", false, "Enable verbose mode")
 	flag.Parse()
 
@@ -60,12 +60,13 @@ func main() {
 		log.Fatalf("could not create scanner: %+v", err)
 	}
 	defer tw.Close()
-	
+
 	// Load LHE file
 	f, err := os.Open(*ifname)
 	if err != nil {
 		panic(err)
 	}
+	defer f.Close()
 
 	// Get LHE decoder
 	lhedec, err := lhef.NewDecoder(f)
@@ -75,12 +76,17 @@ func main() {
 
 	// Loop over events
 	iEvt := 0
-	for i := 0; ; i++ {
+
+loop:
+	for {
 
 		// Decode this event, stop if the end of file is reached
 		lhe_evt, err := lhedec.Decode()
-		if err == io.EOF {
-			break
+		if err != nil {
+			if err == io.EOF {
+				break loop
+			}
+			log.Fatalf("could not decode event %d: %+v", iEvt, err)
 		}
 
 		// Print the event in verbose mode
@@ -88,59 +94,51 @@ func main() {
 			fmt.Println()
 			fmt.Println(*lhe_evt)
 		}
-		
+
 		// Converting the information from LHE event to TTree event
 		var (
 			pids     = lhe_evt.IDUP
 			PxPyPzEM = lhe_evt.PUP
-			get4Vec  = func(x [5]float64) (lv.FourVec) {
-				return lv.NewFourVecPxPyPzM(x[0], x[1], x[2], x[4])
-			}
 			setPart  = func(part *Particle, P lv.FourVec, pid int64) {
-				part.pt  = float32(P.Pt())
+				part.pt = float32(P.Pt())
 				part.eta = float32(P.Eta())
 				part.phi = float32(P.Phi())
-				part.m   = float32(P.M())
+				part.m = float32(P.M())
 				part.pid = int32(pid)
 			}
 		)
 
 		// Loop over particles
 		for i, pid := range pids {
-			if pid == 6 { // top-quark
+			switch pid {
+			case 6: // top-quark
 				setPart(&e.t, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if pid == -6 { // anti top-quark
+			case -6: // anti top-quark
 				setPart(&e.tbar, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if pid == 5 { // b-quark
+			case 5: // b-quark
 				setPart(&e.b, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if pid == -5 { // anti b-quark
+			case -5: // anti b-quark
 				setPart(&e.bbar, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if pid == 24 { // W+ boson
+			case 24: // W+ boson
 				setPart(&e.W, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if pid == -24 { // W- boson
+			case -24: // W- boson
 				setPart(&e.Wbar, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if (pid == -11 || pid == -13 || pid == -15) { // Charged leptons
+			case -11, -13, -15: // Charged leptons
 				setPart(&e.l, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if (pid == 11 || pid == 13 || pid == 15) { // Charged anti-leptons
+			case 11, 13, 15: // Charged anti-leptons
 				setPart(&e.lbar, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if (pid == 10 || pid == 12 || pid == 14) { // Neutrinos
+			case 10, 12, 14: // Neutrinos
 				setPart(&e.v, get4Vec(PxPyPzEM[i]), pid)
-			}
-			if (pid == -10 || pid == -12 || pid == -14) { // Anti-neutrinos
+			case -10, -12, -14: // Anti-neutrinos
 				setPart(&e.vbar, get4Vec(PxPyPzEM[i]), pid)
-			}			
+			}
 		}
-		
+
 		// Write the TTree
-		tw.Write()
+		_, err = tw.Write()
+		if err != nil {
+			log.Fatalf("could not write event %d: %+v", iEvt, err)
+		}
 		iEvt++
 	}
 
@@ -148,15 +146,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not close tree-writer: %+v", err)
 	}
-	
+
 	fmt.Println(" --> Event loop is done:", iEvt, "events processed and stored in", ofname)
 }
 
-
-func setBranches (e *Event) []rtree.WriteVar {
+func setBranches(e *Event) []rtree.WriteVar {
 	return []rtree.WriteVar{
 
-		// Top 
+		// Top
 		{Name: "t_pt", Value: &e.t.pt},
 		{Name: "t_eta", Value: &e.t.eta},
 		{Name: "t_phi", Value: &e.t.phi},
@@ -216,5 +213,9 @@ func setBranches (e *Event) []rtree.WriteVar {
 		{Name: "vbar_pid", Value: &e.vbar.pid},
 		{Name: "vbar_m", Value: &e.vbar.m},
 	}
-	
+
+}
+
+func get4Vec(x [5]float64) lv.FourVec {
+	return lv.NewFourVecPxPyPzM(x[0], x[1], x[2], x[4])
 }
