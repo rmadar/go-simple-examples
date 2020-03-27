@@ -83,7 +83,7 @@ func main() {
 			break
 		}
 
-		// Fill the event
+		// Print the event in verbose mode
 		if *verbose {
 			fmt.Println()
 			fmt.Println(*lhe_evt)
@@ -94,7 +94,6 @@ func main() {
 		var (
 			pids     = lhe_evt.IDUP
 			PxPyPzEM = lhe_evt.PUP
-			//idx_MO   = lhe_evt.MOTHUP
 			get4Vec  = func(x [5]float64) (lv.FourVec) {
 				return lv.NewFourVecPxPyPzM(x[0], x[1], x[2], x[4])
 			}
@@ -150,6 +149,7 @@ func main() {
 
 func setBranches (e *Event) []rtree.WriteVar {
 	return []rtree.WriteVar{
+
 		// Top 
 		{Name: "t_pt", Value: &e.t.pt},
 		{Name: "t_eta", Value: &e.t.eta},
@@ -161,6 +161,7 @@ func setBranches (e *Event) []rtree.WriteVar {
 		{Name: "tbar_phi", Value: &e.tbar.phi},
 		{Name: "tbar_pid", Value: &e.tbar.pid},
 		{Name: "tbar_m", Value: &e.tbar.m},
+
 		// b-quarks
 		{Name: "b_pt", Value: &e.b.pt},
 		{Name: "b_eta", Value: &e.b.eta},
@@ -172,6 +173,7 @@ func setBranches (e *Event) []rtree.WriteVar {
 		{Name: "bbar_phi", Value: &e.bbar.phi},
 		{Name: "bbar_pid", Value: &e.bbar.pid},
 		{Name: "bbar_m", Value: &e.bbar.m},
+
 		// W-boson
 		{Name: "W_pt", Value: &e.W.pt},
 		{Name: "W_eta", Value: &e.W.eta},
@@ -183,6 +185,7 @@ func setBranches (e *Event) []rtree.WriteVar {
 		{Name: "Wbar_phi", Value: &e.Wbar.phi},
 		{Name: "Wbar_pid", Value: &e.Wbar.pid},
 		{Name: "Wbar_m", Value: &e.Wbar.m},
+
 		// Charged leptons
 		{Name: "l_pt", Value: &e.l.pt},
 		{Name: "l_eta", Value: &e.l.eta},
@@ -194,6 +197,7 @@ func setBranches (e *Event) []rtree.WriteVar {
 		{Name: "lbar_phi", Value: &e.lbar.phi},
 		{Name: "lbar_pid", Value: &e.lbar.pid},
 		{Name: "lbar_m", Value: &e.lbar.m},
+
 		// Neutrinos
 		{Name: "v_pt", Value: &e.v.pt},
 		{Name: "v_eta", Value: &e.v.eta},
