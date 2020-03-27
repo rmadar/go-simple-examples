@@ -9,8 +9,7 @@ import (
 	"os"
 	"strings"
 	
-	"go-hep.org/x/hep/lhef"
-	
+	"go-hep.org/x/hep/lhef"	
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
 
@@ -75,6 +74,7 @@ func main() {
 	}
 
 	// Loop over events
+	iEvt := 0
 	for i := 0; ; i++ {
 
 		// Decode this event, stop if the end of file is reached
@@ -88,7 +88,6 @@ func main() {
 			fmt.Println()
 			fmt.Println(*lhe_evt)
 		}
-
 		
 		// Converting the information from LHE event to TTree event
 		var (
@@ -142,8 +141,16 @@ func main() {
 		
 		// Write the TTree
 		tw.Write()
+		iEvt++
 	}
 
+
+	err = tw.Close()
+	if err != nil {
+		log.Fatalf("could not close tree-writer: %+v", err)
+	}
+	
+	fmt.Println(" --> Event loop is done:", iEvt, "events processed and stored in", ofname)
 }
 
 
