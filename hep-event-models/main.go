@@ -13,7 +13,7 @@
 // translate each of them into 'EventOut'. Then, with a simple flag
 // (passed as argument) one can run the same executable on the two
 // input format. In summary, we have:
-//  1. EventOut, to be saved
+//  1. EventOut, to be processed (add new variables) and saved
 //  2. EventInFlat, to be loaded and converted into EventOut
 //  3. EventInArray, to be loaded and converted into EventOut
 //
@@ -25,7 +25,8 @@ package main
 
 import (
 	"fmt"
-
+	"math"
+	
 	"go-hep.org/x/hep/groot/rtree"
 )
 
@@ -84,6 +85,22 @@ func (eOut *EventOut) GetTreeWriter() []rtree.WriteVar {
 		{Name: "jet1_hadf", Value: &eOut.Jet1.HADf},
 		{Name: "jet2_hadf", Value: &eOut.Jet2.HADf},		
 	}
+}
+
+// Function implementing the processing of EventOut
+func (e *EventOut) Process() EventOut {
+
+	// Compute M(j,j)
+	e.InvMass = math.Sqrt(math.Abs(e.Jet1.E*e.Jet1.E - (
+		e.Jet1.Px*e.Jet1.Px
+		+ e.Jet1.Py*e.Jet1.Py
+		+ e.Jet1.Pz*e.Jet1.Pz)))
+
+	// Compute the hadronic fraction of each jet
+	e.Jet1.HADf = 1 - e.Jet1.EMf
+	e.Jet2.HADf = 1 - e.Jet2.EMf
+
+	return *e
 }
 
 // Interface for generic input event model which must be
