@@ -1,9 +1,12 @@
 
-// Generate ROOT file with two different TTrees format
+// Generate ROOT file with two different event models
+//  1. flat data
+//  2. array data
 
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math"
 	"math/rand"
@@ -12,8 +15,17 @@ import (
 	"go-hep.org/x/hep/groot/rtree"
 )
 
+
 func main() {
-	treeFlat("../TwoEventModels.root", 10000)
+
+	var (
+		fname  = flag.String("f", "../TwoEventModels.root", "path to ROOT file to create")
+		evtmax = flag.Int64("n", 10000, "number of events to generate")
+	)
+
+	flag.Parse()
+	
+	generateData(*fname, *evtmax)
 }
 
 
@@ -37,7 +49,8 @@ type EventArray struct {
 	Jets_Ntrk [2]int64
 }
 
-func treeFlat(fname string, evtmax int64) {
+// Creating the two TTrees in the same file
+func generateData(fname string, evtmax int64) {
 	f, err := groot.Create(fname)
 	if err != nil {
 		fmt.Errorf("could not create ROOT file %q: %w", fname, err)
