@@ -16,6 +16,7 @@
 //  1. EventOut, to be processed (add new variables) and saved
 //  2. EventInFlat, to be loaded and converted into EventOut
 //  3. EventInArray, to be loaded and converted into EventOut
+// where the two last are satisfying the single interface 'EventIn'.
 //
 // For this example, we consider events with 2-jets in the final
 // state, described by 12 numbers, 2 x (4-vectors + number of
@@ -26,14 +27,52 @@ package main
 import (
 	"fmt"
 	"math"
-	
+
+	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
 )
 
 func main() {
+	eventLoop("TwoEventModels.root", "flat")
 	
-	fmt.Println("Testing 'go interface' concept")
+}
+
+// Perform the event loop
+func eventLoop(ifname, emodel string) {
 	
+	// Open ROOT file
+	f, err := groot.Open(ifname)
+	if err != nil {
+		fmt.Errorf("could not create ROOT file %q: %w", ifname, err)
+	}
+	defer f.Close()
+
+	// Choose the (tree name, event model) depending on the specified event model
+	var tname string = "TreeEventFlat"
+	var eIn EventIn = EventInFlat{}
+        //switch emodel {
+	//case "flat", "Flat", "FLAT":
+	//tname = "TreeEventFlat"
+	//eIn = EventInFlat{}
+	//case "array", "Array", "ARRAY":
+	//tname = "TreeEventArray"
+	//eIn = EventInArray{}
+	//}
+
+	// Open the TTree
+	obj, err := f.Get(tname)
+	if err != nil {
+		fmt.Errorf("could not retrieve tree %q: %+v", tname, err)
+	}
+	tree := obj.(rtree.Tree)
+
+	// Prepare event reading
+	rvars := eIn.GetTreeScannerVars()
+	sc, err := rtree.NewScanner(tree, rvars...)
+	if err != nil {
+		fmt.Errorf("could not create scanner: %+v", err)
+	}
+	defer sc.Close()
 }
 
 // Input Event model made of 12 (flat) numbers
@@ -98,15 +137,15 @@ func (e *EventOut) Process() EventOut {
 }
 
 // Interface for generic input event model which must be
-// 1. read, ie associate a name to a value: GetTreeScanner()
+// 1. read, ie associate a name to a value: GetTreeScannerVars()
 // 2. converted into EventOut: CopyTo() 
-type EventInput interface {
-	GetTreeScanner() []rtree.ScanVar
+type EventIn interface {
+	GetTreeScannerVars() []rtree.ScanVar
 	CopyTo(evt *EventOut)
 }
 
 // Implementation of the reading of EventInFlat
-func (eIn *EventInFlat) GetTreeScanner() []rtree.ScanVar {
+func (eIn *EventInFlat) GetTreeScannerVars() []rtree.ScanVar {
 	return []rtree.ScanVar{
 
 		// Jet 1
@@ -128,7 +167,7 @@ func (eIn *EventInFlat) GetTreeScanner() []rtree.ScanVar {
 }
 
 // Implementation of copying EventInFlat to EventOut
-func (eIn *EventInFlat) CopyTo(eOut *EventOut) {
+func (eIn EventInFlat) CopyTo(eOut *EventOut) {
 
 	eOut.Jet1 = RecoJet{
 		Px: eIn.Jet1_Px,
@@ -151,7 +190,7 @@ func (eIn *EventInFlat) CopyTo(eOut *EventOut) {
 
 
 // Implementation of the reading of EventInArray
-func (eIn *EventInArray) GetTreeScanner() []rtree.ScanVar {
+func (eIn *EventInArray) GetTreeScannerVars() []rtree.ScanVar {
 	return []rtree.ScanVar{
 		{Name: "jets_px"   , Value: &eIn.Jets_Px  },
 		{Name: "jets_py"   , Value: &eIn.Jets_Py  },
@@ -163,7 +202,7 @@ func (eIn *EventInArray) GetTreeScanner() []rtree.ScanVar {
 }
 
 // Implementation of copying EventInFlat to EventOut
-func (eIn *EventInArray) CopyTo(eOut *EventOut) {
+func (eIn EventInArray) CopyTo(eOut *EventOut) {
 	var reco_jets [2]RecoJet
 	for i := range eIn.Jets_Px {
 		reco_jets[i] = RecoJet{
