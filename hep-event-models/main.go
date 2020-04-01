@@ -48,24 +48,24 @@ func eventLoop(ifname, emodel string) {
 	defer f.Close()
 
 	// Choose the (tree name, event model) depending on the specified event model
-	var tname string = "TreeEventFlat"
-	var eIn EventIn = EventInFlat{}
-        //switch emodel {
-	//case "flat", "Flat", "FLAT":
-	//tname = "TreeEventFlat"
-	//eIn = EventInFlat{}
-	//case "array", "Array", "ARRAY":
-	//tname = "TreeEventArray"
-	//eIn = EventInArray{}
-	//}
-
+	var tname string
+	var eIn EventIn
+        switch emodel {
+	case "flat", "Flat", "FLAT":
+		tname = "TreeEventFlat"
+		eIn = EventInFlat{}
+	case "array", "Array", "ARRAY":
+		tname = "TreeEventArray"
+		eIn = EventInArray{}
+	}
+	
 	// Open the TTree
 	obj, err := f.Get(tname)
 	if err != nil {
 		fmt.Errorf("could not retrieve tree %q: %+v", tname, err)
 	}
 	tree := obj.(rtree.Tree)
-
+	
 	// Prepare event reading
 	rvars := eIn.GetTreeScannerVars()
 	sc, err := rtree.NewScanner(tree, rvars...)
