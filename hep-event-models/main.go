@@ -30,16 +30,11 @@ import (
 	"go-hep.org/x/hep/groot/rtree"
 )
 
-
-
-
 func main() {
 	
 	fmt.Println("Testing 'go interface' concept")
 	
-	
 }
-
 
 // Input Event model made of 12 (flat) numbers
 type EventInFlat struct {
@@ -91,10 +86,9 @@ func (eOut *EventOut) GetTreeWriter() []rtree.WriteVar {
 func (e *EventOut) Process() EventOut {
 
 	// Compute M(j,j)
-	e.InvMass = math.Sqrt(math.Abs(e.Jet1.E*e.Jet1.E - (
-		e.Jet1.Px*e.Jet1.Px
-		+ e.Jet1.Py*e.Jet1.Py
-		+ e.Jet1.Pz*e.Jet1.Pz)))
+	E2 := e.Jet1.E*e.Jet1.E
+	P2 := e.Jet1.Px*e.Jet1.Px+ e.Jet1.Py*e.Jet1.Py + e.Jet1.Pz*e.Jet1.Pz
+	e.InvMass = math.Sqrt(math.Abs(E2 - P2))
 
 	// Compute the hadronic fraction of each jet
 	e.Jet1.HADf = 1 - e.Jet1.EMf
