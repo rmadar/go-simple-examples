@@ -29,6 +29,17 @@ import (
 	"go-hep.org/x/hep/groot/rtree"
 )
 
+
+
+
+func main() {
+	
+	fmt.Println("Testing 'go interface' concept")
+	
+	
+}
+
+
 // Input Event model made of 12 (flat) numbers
 type EventInFlat struct {
 	Jet1_Px  , Jet2_Px   float64
@@ -41,12 +52,12 @@ type EventInFlat struct {
 
 // Input event model made of 6 arrays of 2-elements
 type EventInArray struct {
-	Jet_px   [2]float64
-	Jet_py   [2]float64
-	Jet_pz   [2]float64
-	Jet_e    [2]float64
-	Jet_emf  [2]float64
-	Jet_ntrk [2]int64
+	Jets_Px   [2]float64
+	Jets_Py   [2]float64
+	Jets_Pz   [2]float64
+	Jets_E    [2]float64
+	Jets_EMf  [2]float64
+	Jets_Ntrk [2]int64
 }
 
 // Output event model, structured in two RecoJet objects,
@@ -60,18 +71,18 @@ type EventOut struct {
 // and additional variables in the same structure
 type RecoJet struct {
 	Px, Py, Pz, E float64
-	Ntrks int64
+	Ntrk int64
 	EMf float64
 	HADf float64
 }
 
 // Function returning a writer to associate each variable to branch name
 // In this example, only the information of interested in saved.
-func (*e EventOut) GetTreeWriter() []rtree.WriteVar {
+func (eOut *EventOut) GetTreeWriter() []rtree.WriteVar {
 	return []rtree.WriteVar{
-		{Name: "jet_mass" , Value: &e.InvMass},
-		{Name: "jet1_hadf", Value: &e.Jet1.HADf},
-		{Name: "jet2_hadf", Value: &e.Jet2.HADf},		
+		{Name: "jet_mass" , Value: &eOut.InvMass  },
+		{Name: "jet1_hadf", Value: &eOut.Jet1.HADf},
+		{Name: "jet2_hadf", Value: &eOut.Jet2.HADf},		
 	}
 }
 
@@ -83,13 +94,77 @@ type EventInput interface {
 	CopyTo(evt *EventOut)
 }
 
-// Implementation of reading part for EventInFlat
-func (e *EventInFlat) GetTreeScanner() []rtree.ScanVar {
-	
+// Implementation of the reading of EventInFlat
+func (eIn *EventInFlat) GetTreeScanner() []rtree.ScanVar {
+	return []rtree.ScanVar{
+
+		// Jet 1
+		{Name: "jet_px_1"  , Value: &eIn.Jet1_Px  },
+		{Name: "jet_py_1"  , Value: &eIn.Jet1_Py  },
+		{Name: "jet_pz_1"  , Value: &eIn.Jet1_Pz  },
+		{Name: "jet_e_1"   , Value: &eIn.Jet1_E   },
+		{Name: "jet_ntrk_1", Value: &eIn.Jet1_Ntrk},
+		{Name: "jet_emf_1" , Value: &eIn.Jet1_EMf },
+		
+		// Jet 2
+		{Name: "jet_px_2"  , Value: &eIn.Jet1_Px  },
+		{Name: "jet_py_2"  , Value: &eIn.Jet1_Py  },
+		{Name: "jet_pz_2"  , Value: &eIn.Jet1_Pz  },
+		{Name: "jet_e_2"   , Value: &eIn.Jet1_E   },
+		{Name: "jet_ntrk_2", Value: &eIn.Jet1_Ntrk},
+		{Name: "jet_emf_2" , Value: &eIn.Jet1_EMf },
+	}
+}
+
+// Implementation of copying EventInFlat to EventOut
+func (eIn *EventInFlat) CopyTo(eOut *EventOut) {
+
+	eOut.Jet1 = RecoJet{
+		Px: eIn.Jet1_Px,
+		Py: eIn.Jet1_Py,
+		Pz: eIn.Jet1_Pz,
+		E: eIn.Jet1_E,
+		Ntrk: eIn.Jet1_Ntrk,
+		EMf: eIn.Jet1_EMf,
+	}
+
+	eOut.Jet2 = RecoJet{
+		Px: eIn.Jet2_Px,
+		Py: eIn.Jet2_Py,
+		Pz: eIn.Jet2_Pz,
+		E: eIn.Jet2_E,
+		Ntrk: eIn.Jet2_Ntrk,
+		EMf: eIn.Jet2_EMf,
+	}
 }
 
 
-func main() {
-	
-	fmt.Println("Testing 'go interface' concept")
+// Implementation of the reading of EventInArray
+func (eIn *EventInArray) GetTreeScanner() []rtree.ScanVar {
+	return []rtree.ScanVar{
+		{Name: "jets_px"   , Value: &eIn.Jets_Px  },
+		{Name: "jets_py"   , Value: &eIn.Jets_Py  },
+		{Name: "jets_pz"   , Value: &eIn.Jets_Pz  },
+		{Name: "jets_e"    , Value: &eIn.Jets_E   },
+		{Name: "jets_ntrks", Value: &eIn.Jets_Ntrk},
+		{Name: "jets_emf"  , Value: &eIn.Jets_EMf },
+	}
 }
+
+// Implementation of copying EventInFlat to EventOut
+func (eIn *EventInArray) CopyTo(eOut *EventOut) {
+	var reco_jets [2]RecoJet
+	for i := range eIn.Jets_Px {
+		reco_jets[i] = RecoJet{
+			Px: eIn.Jets_Px[i],
+			Py: eIn.Jets_Py[i],
+			Pz: eIn.Jets_Pz[i],
+			E: eIn.Jets_E[i],
+			Ntrk: eIn.Jets_Ntrk[i],
+			EMf: eIn.Jets_EMf[i],
+		}
+	}
+	eOut.Jet1 = reco_jets[0]
+	eOut.Jet2 = reco_jets[1]
+}
+
