@@ -73,7 +73,27 @@ func eventLoop(ifname, emodel string) {
 		fmt.Errorf("could not create scanner: %+v", err)
 	}
 	defer sc.Close()
+
+	// Prepare event processing and writing
+	var eOut EventOut
+	
+	// Event loop
+	for sc.Next() {
+		
+		// Load variable of the event
+		ievt, err := sc.Entry(), sc.Scan()
+		if err != nil {
+			fmt.Errorf("could not scan entry %d: %+v", ievt, err)
+		}
+		
+		// Copy the 'input' event format into the 'output' event format
+		eIn.CopyTo(&eOut)
+		
+		// Process the event
+		eOut.Process()		
+	}
 }
+
 
 // Input Event model made of 12 (flat) numbers
 type EventInFlat struct {
