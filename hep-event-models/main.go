@@ -61,11 +61,11 @@ func eventLoop(ifname, emodel string) {
 	// Choose the (tree name, event model) depending on the specified event model
 	var tname string
 	var eIn EventIn
-        switch emodel {
-	case "flat", "Flat", "FLAT":
+        switch strings.ToLower(emodel) {
+	case "flat":
 		tname = "TreeEventFlat"
 		eIn = &EventInFlat{}
-	case "array", "Array", "ARRAY":
+	case "array":
 		tname = "TreeEventArray"
 		eIn = &EventInArray{}
 	}
