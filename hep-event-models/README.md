@@ -20,28 +20,4 @@ type EventIn interface {
 }			     
 ```
 
-For this example, we consider events with 2-jets in the final state, described by 12 numbers, 2 x (4-vectors + number of tracks + EM fraction), that can be organized in 2 different ways. The `EventOut` onlyt store information of interest, and add new observables.
-
-```go
-// Flat tree input 
-type EventInFlat struct {
-	Jet1_Px  , Jet2_Px   float64
-	Jet1_Py  , Jet2_Py   float64
-	Jet1_Pz  , Jet2_Pz   float64
-	Jet1_E   , Jet2_E    float64
-	Jet1_EMf , Jet2_EMf  float64
-	Jet1_Ntrk, Jet2_Ntrk int64
-}
-```
-
-```go
-// Array-typed tree input
-type EventInArray struct {
-	Jets_Px   [2]float64
-	Jets_Py   [2]float64
-	Jets_Pz   [2]float64
-	Jets_E    [2]float64
-	Jets_EMf  [2]float64
-	Jets_Ntrk [2]int64
-}
-```
+For this example, we consider events with 2-jets in the final state, described by 12 numbers, 2 x (4-vectors + number of tracks + EM fraction), that can be organized in 2 different ways, namely 12 flat numbers or 6 x 2-elements arrays. The `EventOut` onlyt store information of interest, and add new observables.
