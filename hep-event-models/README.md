@@ -6,11 +6,11 @@ The use case in mind for this example is to have two inputs event formats, `Even
 
 In summary, we have the following workflow:
 ```
- ----------------------       ----------       ------------------      ----------------
-| EventInFlat reading  |     |          |     |                  |    |                |
-|                      | --> | EventOut | --> | Event processing |--> | Output writing |
-| EventInArray reading |     |          |     |                  |    |                |
- ----------------------       ----------       ------------------      ----------------
+ ----------------------       ----------       ------------------       ----------------
+| *Interface EventIn*  |     |          |     |                  |     |                |
+| EventInFlat reading  | --> | EventOut | --> | Event processing | --> | Output writing |
+| EventInArray reading |     |          |     |                  |     |                |
+ ----------------------       ----------       ------------------       ----------------
 ```
 where `EventInFlat` and `EventInArray` statisfy the same **`EventIn` interface** defined:
 ```go
