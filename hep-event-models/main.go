@@ -25,10 +25,11 @@
 package main
 
 import (
-	"fmt"
+	_ "fmt"
 	"math"
 	"flag"
 	"strings"
+	"log"
 	
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
@@ -54,7 +55,7 @@ func eventLoop(ifname, emodel string) {
 	// Open ROOT file
 	f, err := groot.Open(ifname)
 	if err != nil {
-		fmt.Errorf("could not create ROOT file %q: %w", ifname, err)
+		log.Fatalf("could not create ROOT file %q: %w", ifname, err)
 	}
 	defer f.Close()
 
@@ -73,7 +74,7 @@ func eventLoop(ifname, emodel string) {
 	// Open the TTree
 	obj, err := f.Get(tname)
 	if err != nil {
-		fmt.Errorf("could not retrieve tree %q: %+v", tname, err)
+		log.Fatalf("could not retrieve tree %q: %+v", tname, err)
 	}
 	tree := obj.(rtree.Tree)
 	
@@ -81,7 +82,7 @@ func eventLoop(ifname, emodel string) {
 	rvars := eIn.GetTreeScannerVars()
 	sc, err := rtree.NewScannerVars(tree, rvars...)
 	if err != nil {
-		fmt.Errorf("could not create scanner: %+v", err)
+		log.Fatalf("could not create scanner: %+v", err)
 	}
 	defer sc.Close()
 	
@@ -89,14 +90,14 @@ func eventLoop(ifname, emodel string) {
 	fnameOut := "ProcessedFromEvent" + strings.Title(emodel) + ".root"
 	fout, err := groot.Create(fnameOut)
 	if err != nil {
-		fmt.Errorf("could not create ROOT file %q: %w", fnameOut, err)
+		log.Fatalf("could not create ROOT file %q: %w", fnameOut, err)
 	}
 	defer fout.Close()
 	var eOut EventOut
 	wvars := eOut.GetTreeWriterVars()
 	treeOut, err := rtree.NewWriter(fout, "TreeEventOut", wvars)
 	if err != nil {
-		fmt.Errorf("could not create scanner: %+v", err)
+		log.Fatalf("could not create scanner: %+v", err)
 	}
 	defer treeOut.Close()
 
@@ -106,7 +107,7 @@ func eventLoop(ifname, emodel string) {
 		// Load variable of the event
 		ievt, err := sc.Entry(), sc.Scan()
 		if err != nil {
-			fmt.Errorf("could not scan entry %d: %+v", ievt, err)
+			log.Fatalf("could not scan entry %d: %+v", ievt, err)
 		}
 		
 		// Copy the 'input' event format into the 'output' event format
@@ -118,7 +119,7 @@ func eventLoop(ifname, emodel string) {
 		// Write output tree
 		_, err = treeOut.Write()
 		if err != nil {
-			fmt.Errorf("could not write output tree %d: %+v", ievt, err)
+			log.Fatalf("could not write output tree %d: %+v", ievt, err)
 		}
 	}
 }
@@ -240,12 +241,12 @@ type EventInArray struct {
 // Implementation of the reading of EventInArray
 func (eIn *EventInArray) GetTreeScannerVars() []rtree.ScanVar {
 	return []rtree.ScanVar{
-		{Name: "jets_px"   , Value: &eIn.Jets_Px  },
-		{Name: "jets_py"   , Value: &eIn.Jets_Py  },
-		{Name: "jets_pz"   , Value: &eIn.Jets_Pz  },
-		{Name: "jets_e"    , Value: &eIn.Jets_E   },
-		{Name: "jets_ntrks", Value: &eIn.Jets_Ntrk},
-		{Name: "jets_emf"  , Value: &eIn.Jets_EMf },
+		{Name: "jets_px"  , Value: &eIn.Jets_Px  },
+		{Name: "jets_py"  , Value: &eIn.Jets_Py  },
+		{Name: "jets_pz"  , Value: &eIn.Jets_Pz  },
+		{Name: "jets_e"   , Value: &eIn.Jets_E   },
+		{Name: "jets_ntrk", Value: &eIn.Jets_Ntrk},
+		{Name: "jets_emf" , Value: &eIn.Jets_EMf },
 	}
 }
 
