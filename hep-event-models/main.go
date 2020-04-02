@@ -27,13 +27,24 @@ package main
 import (
 	"fmt"
 	"math"
-
+	"flag"
+	"strings"
+	
 	"go-hep.org/x/hep/groot"
 	"go-hep.org/x/hep/groot/rtree"
 )
 
 func main() {
-	eventLoop("TwoEventModels.root", "flat")
+
+	var (
+		fname  = flag.String("f"  , "TwoEventModels.root", "Input file name")
+		emodel = flag.String("edm", "flat", "Input event model: 'flat', 'array'")
+	)
+
+	flag.Parse()
+	
+	eventLoop(*fname, *emodel)
+	eventLoop(*fname, *emodel)
 	
 }
 
@@ -53,10 +64,10 @@ func eventLoop(ifname, emodel string) {
         switch emodel {
 	case "flat", "Flat", "FLAT":
 		tname = "TreeEventFlat"
-		eIn = EventInFlat{}
+		eIn = &EventInFlat{}
 	case "array", "Array", "ARRAY":
 		tname = "TreeEventArray"
-		eIn = EventInArray{}
+		eIn = &EventInArray{}
 	}
 	
 	// Open the TTree
@@ -68,15 +79,27 @@ func eventLoop(ifname, emodel string) {
 	
 	// Prepare event reading
 	rvars := eIn.GetTreeScannerVars()
-	sc, err := rtree.NewScanner(tree, rvars...)
+	sc, err := rtree.NewScannerVars(tree, rvars...)
 	if err != nil {
 		fmt.Errorf("could not create scanner: %+v", err)
 	}
 	defer sc.Close()
-
-	// Prepare event processing and writing
-	var eOut EventOut
 	
+	// Prepare the output file, tree and event processing
+	fnameOut := "ProcessedFromEvent" + strings.Title(emodel) + ".root"
+	fout, err := groot.Create(fnameOut)
+	if err != nil {
+		fmt.Errorf("could not create ROOT file %q: %w", fnameOut, err)
+	}
+	defer fout.Close()
+	var eOut EventOut
+	wvars := eOut.GetTreeWriterVars()
+	treeOut, err := rtree.NewWriter(fout, "TreeEventOut", wvars)
+	if err != nil {
+		fmt.Errorf("could not create scanner: %+v", err)
+	}
+	defer treeOut.Close()
+
 	// Event loop
 	for sc.Next() {
 		
@@ -90,29 +113,14 @@ func eventLoop(ifname, emodel string) {
 		eIn.CopyTo(&eOut)
 		
 		// Process the event
-		eOut.Process()		
+		eOut.Process()
+
+		// Write output tree
+		_, err = treeOut.Write()
+		if err != nil {
+			fmt.Errorf("could not write output tree %d: %+v", ievt, err)
+		}
 	}
-}
-
-
-// Input Event model made of 12 (flat) numbers
-type EventInFlat struct {
-	Jet1_Px  , Jet2_Px   float64
-	Jet1_Py  , Jet2_Py   float64
-	Jet1_Pz  , Jet2_Pz   float64
-	Jet1_E   , Jet2_E    float64
-	Jet1_EMf , Jet2_EMf  float64
-	Jet1_Ntrk, Jet2_Ntrk int64
-}
-
-// Input event model made of 6 arrays of 2-elements
-type EventInArray struct {
-	Jets_Px   [2]float64
-	Jets_Py   [2]float64
-	Jets_Pz   [2]float64
-	Jets_E    [2]float64
-	Jets_EMf  [2]float64
-	Jets_Ntrk [2]int64
 }
 
 // Output event model, structured in two RecoJet objects,
@@ -133,11 +141,11 @@ type RecoJet struct {
 
 // Function returning a writer to associate each variable to branch name
 // In this example, only the information of interested in saved.
-func (eOut *EventOut) GetTreeWriter() []rtree.WriteVar {
+func (e *EventOut) GetTreeWriterVars() []rtree.WriteVar {
 	return []rtree.WriteVar{
-		{Name: "jet_mass" , Value: &eOut.InvMass  },
-		{Name: "jet1_hadf", Value: &eOut.Jet1.HADf},
-		{Name: "jet2_hadf", Value: &eOut.Jet2.HADf},		
+		{Name: "jet_mass" , Value: &e.InvMass  },
+		{Name: "jet1_hadf", Value: &e.Jet1.HADf},
+		{Name: "jet2_hadf", Value: &e.Jet2.HADf},		
 	}
 }
 
@@ -164,6 +172,16 @@ type EventIn interface {
 	CopyTo(evt *EventOut)
 }
 
+// Input Event model made of 12 (flat) numbers
+type EventInFlat struct {
+	Jet1_Px  , Jet2_Px   float64
+	Jet1_Py  , Jet2_Py   float64
+	Jet1_Pz  , Jet2_Pz   float64
+	Jet1_E   , Jet2_E    float64
+	Jet1_EMf , Jet2_EMf  float64
+	Jet1_Ntrk, Jet2_Ntrk int64
+}
+
 // Implementation of the reading of EventInFlat
 func (eIn *EventInFlat) GetTreeScannerVars() []rtree.ScanVar {
 	return []rtree.ScanVar{
@@ -177,12 +195,12 @@ func (eIn *EventInFlat) GetTreeScannerVars() []rtree.ScanVar {
 		{Name: "jet_emf_1" , Value: &eIn.Jet1_EMf },
 		
 		// Jet 2
-		{Name: "jet_px_2"  , Value: &eIn.Jet1_Px  },
-		{Name: "jet_py_2"  , Value: &eIn.Jet1_Py  },
-		{Name: "jet_pz_2"  , Value: &eIn.Jet1_Pz  },
-		{Name: "jet_e_2"   , Value: &eIn.Jet1_E   },
-		{Name: "jet_ntrk_2", Value: &eIn.Jet1_Ntrk},
-		{Name: "jet_emf_2" , Value: &eIn.Jet1_EMf },
+		{Name: "jet_px_2"  , Value: &eIn.Jet2_Px  },
+		{Name: "jet_py_2"  , Value: &eIn.Jet2_Py  },
+		{Name: "jet_pz_2"  , Value: &eIn.Jet2_Pz  },
+		{Name: "jet_e_2"   , Value: &eIn.Jet2_E   },
+		{Name: "jet_ntrk_2", Value: &eIn.Jet2_Ntrk},
+		{Name: "jet_emf_2" , Value: &eIn.Jet2_EMf },
 	}
 }
 
@@ -208,6 +226,16 @@ func (eIn EventInFlat) CopyTo(eOut *EventOut) {
 	}
 }
 
+
+// Input event model made of 6 arrays of 2-elements
+type EventInArray struct {
+	Jets_Px   [2]float64
+	Jets_Py   [2]float64
+	Jets_Pz   [2]float64
+	Jets_E    [2]float64
+	Jets_EMf  [2]float64
+	Jets_Ntrk [2]int64
+}
 
 // Implementation of the reading of EventInArray
 func (eIn *EventInArray) GetTreeScannerVars() []rtree.ScanVar {
