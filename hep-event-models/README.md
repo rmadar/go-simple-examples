@@ -15,8 +15,8 @@ In summary, we have the following workflow:
 where `EventInFlat` and `EventInArray` statisfy the same **`EventIn` interface** defined:
 ```go
 type EventIn interface {
-     GetTreeScannerVars() []rtree.ScanVar \\ TTree reading (contains branch name <-> variable association)
-     CopyTo(evt *EventOut)                \\ Convertion to EventOut event model
+     GetTreeScannerVars() []rtree.ScanVar // TTree reading (contains branch name <-> variable association)
+     CopyTo(evt *EventOut)                // Convertion to EventOut event model
 }			     
 ```
 
