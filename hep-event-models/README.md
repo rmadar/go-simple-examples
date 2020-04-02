@@ -6,8 +6,9 @@ The use case in mind for this example is to have two inputs event formats, `Even
 
 In summary, we the following workflow:
 ```
-| EventInFlat reading  --> EventOut --> Event processing --> Output writing
-| EventInArray reading
+| EventInFlat reading  |
+|                      | --> EventOut --> Event processing --> Output writing
+| EventInArray reading |
 ```
   1. EventOut, to be processed (add new variables) and saved
   1. EventInFlat, to be loaded and converted into EventOut
