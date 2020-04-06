@@ -14,8 +14,9 @@ import (
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
-	_ "gonum.org/v1/plot/vg/draw"
+	"gonum.org/v1/plot/vg/draw"
 	"gonum.org/v1/plot/vg"
+	"gonum.org/v1/plot/vg/vgimg"
 
 	
 	"go-hep.org/x/hep/hbook"
@@ -24,9 +25,11 @@ import (
 
 func main() {
 
+	// Using hplot to get 1D histogram
 	plotHplot_1D()
-	createPlotUtil()
 
+	// Using PlotUtil to get functions
+	createPlotUtil()
 }
 
 // Use hplot package
@@ -66,35 +69,36 @@ func plotHplot_1D(){
 
 	// Specify title styles
 	p.Title.TextStyle.Font.Size = 18
+	p.Title.Padding = 0
 	p.X.Label.TextStyle.Font.Size = 14
+	p.X.Label.XAlign = draw.XLeft
 	p.Y.Label.TextStyle.Font.Size = 14
-
+	
 	// Specify axis ranges and padding
 	p.X.Min, p.X.Max = -4, 7
 	p.Y.Min, p.Y.Max =  0, 0.6
-	p.X.Padding = 0.2 * vg.Inch
-
-	
-	// Create a histogram of our values drawn
-	// from the standard normal.
+	p.X.Padding = 5
+	p.Y.Padding = 5
+		
+	// Create a histogram of our values drawn from the standard normal.
 	h := hplot.NewH1D(hist, hplot.WithYErrBars(true))
 	h.Infos.Style = hplot.HInfoNone
-	h.LineStyle.Color = color.RGBA{R: 255, G: 255, B: 255, A: 0}
-	h.FillColor = color.RGBA{R: 90, G: 90, B: 250, A: 80}
-	h.YErrs.LineStyle.Color = color.RGBA{R: 90, G: 90, B: 250, A: 255}
-	h.YErrs.LineStyle.Width = +0.02 * vg.Inch
-	// h.Shape = draw.CircleGlyph{} --> doesn't work	
+	h.LineStyle.Color = color.RGBA{R: 10, G: 10, B: 200, A: 255}
+	h.LineStyle.Width = 2
+	h.FillColor = color.RGBA{R: 90, G: 90, B: 200, A: 100}
+	h.YErrs.LineStyle.Color = color.RGBA{R: 10, G: 10, B: 200, A: 255}
+	h.YErrs.LineStyle.Width = 2
 	p.Add(h)
 	
 	// Add the normal distribution function with hplot.NewFunction 
 	norm1 := hplot.NewFunction(dist.Prob)
-	norm1.Color = color.RGBA{R: 255, A: 180} // {R: 255, A: 100} doesn't compile  with LaTeX
+	norm1.Color = color.RGBA{R: 255, A: 180}
 	norm1.Width = vg.Points(2)
 	p.Add(norm1)
 
 	// Add the normal distribution function with Function structure directly
 	norm2 := &hplot.Function{F:dist.Prob, Samples: 10}
-	norm2.Color = color.RGBA{G: 250, A: 180} // {R: 255, A: 100} doesn't compile  with LaTeX
+	norm2.Color = color.RGBA{G: 250, A: 180}
 	norm2.Width = vg.Points(2)
 	p.Add(norm2)
 	
@@ -104,7 +108,7 @@ func plotHplot_1D(){
 	p.Legend.Add("PDF (n=10, user)", norm2)
 	p.Legend.Top = true
 	p.Legend.Left = false
-	p.Legend.YOffs = -0.25 * vg.Inch
+	p.Legend.YOffs = -0.5 * vg.Inch
 	p.Legend.XOffs = -0.5 * vg.Inch
 	p.Legend.Padding = 0.1 * vg.Inch
 	p.Legend.ThumbnailWidth = 0.3 * vg.Inch
@@ -113,8 +117,19 @@ func plotHplot_1D(){
 	// draw a grid if we want
 	// p.Add(hplot.NewGrid())
 
-	// Save the plot to a PDF file.
+	// Save the plot to a PDF file
 	if err := p.Save(6*vg.Inch, -1, "h1d_plot.pdf"); err != nil {
+		log.Fatalf("error saving plot: %v\n", err)
+	}
+
+	// Save the plot to a PNG doesnt work (resolution, transparency)
+	c := vgimg.NewWith(
+		vgimg.UseWH(10*vg.Centimeter, 12*vg.Centimeter),
+		vgimg.UseDPI(200),
+	)
+	dc := draw.New(c)
+	p.Draw(dc)
+	if err := p.Save(6*vg.Inch, -1, "h1d_plot.png"); err != nil {
 		log.Fatalf("error saving plot: %v\n", err)
 	}
 }

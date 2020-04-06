@@ -1,6 +1,6 @@
 ## Cheat sheet of go plotting
 
-Structure of the plotting tools:
+Structure of the plotting tools (WIP):
 ```go
 Figure
  |- canvas
