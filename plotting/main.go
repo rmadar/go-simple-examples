@@ -83,22 +83,22 @@ func plotHplot_1D(){
 	// Create a histogram of our values drawn from the standard normal.
 	h := hplot.NewH1D(hist, hplot.WithYErrBars(true))
 	h.Infos.Style = hplot.HInfoNone
-	h.LineStyle.Color = color.RGBA{R: 10, G: 10, B: 200, A: 255}
+	h.LineStyle.Color = color.NRGBA{R: 10, G: 10, B: 200, A: 255}
 	h.LineStyle.Width = 2
-	h.FillColor = color.RGBA{R: 90, G: 90, B: 200, A: 100}
-	h.YErrs.LineStyle.Color = color.RGBA{R: 10, G: 10, B: 200, A: 255}
+	h.FillColor = color.NRGBA{R: 90, G: 90, B: 200, A: 100}
+	h.YErrs.LineStyle.Color = color.NRGBA{R: 10, G: 10, B: 200, A: 255}
 	h.YErrs.LineStyle.Width = 2
 	p.Add(h)
 	
 	// Add the normal distribution function with hplot.NewFunction 
 	norm1 := hplot.NewFunction(dist.Prob)
-	norm1.Color = color.RGBA{R: 255, A: 180}
+	norm1.Color = color.NRGBA{R: 255, A: 180}
 	norm1.Width = vg.Points(2)
 	p.Add(norm1)
 
 	// Add the normal distribution function with Function structure directly
 	norm2 := &hplot.Function{F:dist.Prob, Samples: 10}
-	norm2.Color = color.RGBA{G: 250, A: 180}
+	norm2.Color = color.NRGBA{G: 250, A: 180}
 	norm2.Width = vg.Points(2)
 	p.Add(norm2)
 	
@@ -122,7 +122,7 @@ func plotHplot_1D(){
 		log.Fatalf("error saving plot: %v\n", err)
 	}
 
-	// Save the plot to a PNG doesnt work (resolution, transparency)
+	// Save the plot to a PNG (resolution doesnt work resolution - most likely not used properly)
 	c := vgimg.NewWith(
 		vgimg.UseWH(10*vg.Centimeter, 12*vg.Centimeter),
 		vgimg.UseDPI(200),
