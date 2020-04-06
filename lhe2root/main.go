@@ -77,10 +77,10 @@ func main() {
 
 	// Loop over events
 	iEvt := 0
-
+	
 loop:
 	for {
-
+		
 		// Decode this event, stop if the end of file is reached
 		lhe_evt, err := lhedec.Decode()
 		if err != nil {
