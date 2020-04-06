@@ -58,14 +58,22 @@ func plotHplot_1D(){
 
 	// Make a plot and set its title and axis range 
 	p := hplot.New()
-	p.Title.TextStyle.Font.Size = 18
-	p.X.Label.TextStyle.Font.Size = 14
-	p.Y.Label.TextStyle.Font.Size = 14
+
+	// Specify titles
 	p.Title.Text = "Gaussian PDF" // "Histogram $\\exp(\\frac{x^2}{\\sigma^2})$"
 	p.X.Label.Text = "X"          // "$\\sqrt{X}$"
 	p.Y.Label.Text = "Y"
+
+	// Specify title styles
+	p.Title.TextStyle.Font.Size = 18
+	p.X.Label.TextStyle.Font.Size = 14
+	p.Y.Label.TextStyle.Font.Size = 14
+
+	// Specify axis ranges and padding
 	p.X.Min, p.X.Max = -4, 7
 	p.Y.Min, p.Y.Max =  0, 0.6
+	p.X.Padding = 0.2 * vg.Inch
+
 	
 	// Create a histogram of our values drawn
 	// from the standard normal.
