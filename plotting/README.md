@@ -1,11 +1,24 @@
 ## Cheat sheet of go plotting
 
+Structure of the plotting tools:
+```go
+Figure
+ |- canvas
+    |- plot
+       |- histogram
+       |- functions
+       |- legends
+       |- axis
+       |...
+```
+
+
 Label size and positions
 ```go
 p := hplot.New()
 p.Title.TextStyle.Font.Size = 18
 p.X.Label.TextStyle.Font.Size = 18
-p.X.Label.XAlign = draw.XRight
+p.X.Label.XAlign = draw.XRight // this doesn't put the label to the right (?)
 ```
 
 Axis range
