@@ -28,8 +28,7 @@ p.Border.Bottom = 5
 Plot title
 
 ```go
-p.Title.TextStyle.Font.Size = 18
-p.Title.TextStyle.Color = color.NRGBA{R: 30, G: 30, B: 30, A: 255}
+p.Title = "Tiltle"
 p.Title.Padding = 10
 ```
 
@@ -44,9 +43,17 @@ p.X.Label.XAlign = draw.XRight // this doesn't put the label to the right
 
 Axis 
 ```go
-p.X.Min, p.X.Max = xmin, xmax    // min & max for x-axis
-p.Y.Min, p.Y.Max = ymin, ymax    // min & max for y-axis
-p.X.Padding, p.Y.Padding = 5, 5  // distance from y=0 for x-axis and x=0 for y-axis
+p.X.Min, p.X.Max = xmin, xmax            // min & max for x-axis
+p.Y.Min, p.Y.Max = ymin, ymax            // min & max for y-axis
+p.X.Padding, p.Y.Padding = 5, 5          // distance from y=0 for x-axis and x=0 for y-axis
+p.X.Label.Text = "$m_{t\\bar{t}}$ [GeV]" // Label of the x-axis
+```
+
+Text 
+```go
+p.Title.TextStyle.Font.Size = 18
+p.Title.TextStyle.Color = color.NRGBA{R: 30, G: 30, B: 30, A: 255}
+// Change font?
 ```
 
 Legend
