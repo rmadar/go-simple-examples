@@ -6,6 +6,7 @@ import (
 	"math"
 	"image/color"
 	"fmt"
+	"os"
 	
 	"gonum.org/v1/gonum/stat/distuv"
 	"golang.org/x/exp/rand"
@@ -81,7 +82,7 @@ func plotHplot_1D(){
 	// draw a grid which is produced by a function
 	// p.Add(newCustomGrid())
 	
-	// Plot borders --> doesn't work with LaTeX yet
+	// Plot borders --> doesn't work with LaTeX/PNG with vgimg yet
 	p.Border.Right = 15
 	p.Border.Left = 5
 	p.Border.Top = 10
@@ -170,7 +171,7 @@ func plotHplot_1D(){
 	p.Legend.Add("Theory", norm)
 	p.Legend.Top = true
 	p.Legend.Left = false
-	p.Legend.YOffs = 0 //-0.5 * vg.Inch
+	p.Legend.YOffs = 0
 	p.Legend.XOffs = -0.5 * vg.Inch
 	p.Legend.Padding = 0.1 * vg.Inch
 	p.Legend.ThumbnailWidth = 0.5 * vg.Inch
@@ -189,14 +190,12 @@ func plotHplot_1D(){
 
 	// Save the plot to a PNG (resolution doesnt work resolution - most likely not used properly)
 	c := vgimg.NewWith(
-		vgimg.UseWH(10*vg.Centimeter, 12*vg.Centimeter),
+		vgimg.UseWH(12*vg.Centimeter, 9*vg.Centimeter),
 		vgimg.UseDPI(200),
 	)
 	dc := draw.New(c)
 	p.Draw(dc)
-	if err := p.Save(6*vg.Inch, -1, "h1d_plot.png"); err != nil {
-		log.Fatalf("error saving plot: %v\n", err)
-	}
+	saveImg(c, "h1d_plot.png")
 }
 
 // Use plotUtil package
@@ -247,6 +246,26 @@ func getPoints(xs []float64, f func(float64) float64) plotter.XYs {
 		pts[i].Y = f(x)
 	}
 	return pts
+}
+
+
+func saveImg(c *vgimg.Canvas, fname string) {
+	f, err := os.Create(fname)
+	if err != nil {
+		log.Fatalf("could not create output image file: %+v", err)
+	}
+	defer f.Close()
+
+	cpng := vgimg.PngCanvas{Canvas: c}
+	_, err = cpng.WriteTo(f)
+	if err != nil {
+		log.Fatalf("could not encode image to PNG: %+v", err)
+	}
+	
+	err = f.Close()
+	if err != nil {
+		log.Fatalf("could not close output image file: %+v", err)
+	}
 }
 
 
