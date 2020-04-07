@@ -16,6 +16,8 @@ Figure
        |...
 ```
 
+### (h)plot object
+
 Plot borders
 
 ```go
@@ -77,6 +79,37 @@ p.Legend.XOffs = -0.5 * vg.Inch           // offset wrt to position
 p.Legend.Padding = 0.1 * vg.Inch          // padding of the legend
 p.Legend.ThumbnailWidth = 0.3 * vg.Inch   // width of the legend
 ```
+
+### 1HD object
+
+Informations
+```go
+h.Infos.Style = hplot.HInfoNone
+```
+
+Line
+```go
+h.LineStyle.Color = color.NRGBA{R: 0, G: 0, B: 0, A: 30}
+h.LineStyle.Width = 2
+h.LineStyle.Dashes = []vg.Length{vg.Points(3), vg.Points(2)} \\ ---  ---  ---
+```
+
+Marker style
+```go
+h.GlyphStyle = draw.GlyphStyle{
+ 	Shape:  draw.CircleGlyph{}, \\ type of marker
+	Color:  color.NRGBA{R: 10}  \\ color of marker
+	Radius: vg.Points(3)}       \\ size of marker
+```
+
+Error bar
+
+```go
+h.YErrs.LineStyle.Color = color.NRGBA{R: 10}
+h.YErrs.LineStyle.Width = 2.5
+h.YErrs.CapWidth = 8
+```
+
 
 ## To-do's
 
