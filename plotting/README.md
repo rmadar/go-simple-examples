@@ -36,23 +36,21 @@ p.Title.Padding = 10
 Label size and positions
 
 ```go
-p := hplot.New()
 p.Title.TextStyle.Font.Size = 18
 p.X.Label.TextStyle.Font.Size = 18
 p.X.Label.XAlign = draw.XRight // this doesn't put the label to the right
                                // see https://github.com/go-hep/hep/issues/620
 ```
 
-Axis range
+Axis 
 ```go
-p := hplot.New()
-p.X.Min, p.X.Max = xmin, xmax
-p.Y.Min, p.Y.Max = ymin, ymax
+p.X.Min, p.X.Max = xmin, xmax    // min & max for x-axis
+p.Y.Min, p.Y.Max = ymin, ymax    // min & max for y-axis
+p.X.Padding, p.Y.Padding = 5, 5  // distance from y=0 for x-axis and x=0 for y-axis
 ```
 
-Adding a Legend
+Legend
 ```go
-p := hplot.New()
 p.Legend.Add(obj, "name")	
 p.Legend.Top, p.Legend.Left = true, false // position
 p.Legend.YOffs = -0.25 * vg.Inch          // offset wrt to position
