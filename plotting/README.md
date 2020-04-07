@@ -91,23 +91,27 @@ Line
 ```go
 h.LineStyle.Color = color.NRGBA{R: 0, G: 0, B: 0, A: 30}
 h.LineStyle.Width = 2
-h.LineStyle.Dashes = []vg.Length{vg.Points(3), vg.Points(2)} \\ ---  ---  ---
+h.LineStyle.Dashes = []vg.Length{vg.Points(3), vg.Points(2)} // ---  ---  ---
+```
+
+Fill
+```go
+h.FillColor = color.NRGBA{R: 0, G: 0, B: 0, A: 30}
 ```
 
 Marker style
 ```go
 h.GlyphStyle = draw.GlyphStyle{
- 	Shape:  draw.CircleGlyph{}, \\ type of marker
-	Color:  color.NRGBA{R: 10}  \\ color of marker
-	Radius: vg.Points(3)}       \\ size of marker
+ 	Shape:  draw.CircleGlyph{}, // type of marker
+	Color:  color.NRGBA{R: 10}  // color of marker
+	Radius: vg.Points(3)}       // size of marker
 ```
 
 Error bar
-
 ```go
-h.YErrs.LineStyle.Color = color.NRGBA{R: 10}
-h.YErrs.LineStyle.Width = 2.5
-h.YErrs.CapWidth = 8
+h.YErrs.LineStyle.Color = color.NRGBA{R: 10} // color of error bar
+h.YErrs.LineStyle.Width = 2.5                // line width of the error bar   
+h.YErrs.CapWidth = 8                         // size of perpendicular lines
 ```
 
 
