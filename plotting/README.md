@@ -16,13 +16,31 @@ Figure
        |...
 ```
 
+Plot borders
+
+```go
+p.Border.Right = 15
+p.Border.Left = 5
+p.Border.Top = 10
+p.Border.Bottom = 5
+```
+
+Plot title
+
+```go
+p.Title.TextStyle.Font.Size = 18
+p.Title.TextStyle.Color = color.NRGBA{R: 30, G: 30, B: 30, A: 255}
+p.Title.Padding = 10
+```
 
 Label size and positions
+
 ```go
 p := hplot.New()
 p.Title.TextStyle.Font.Size = 18
 p.X.Label.TextStyle.Font.Size = 18
-p.X.Label.XAlign = draw.XRight // this doesn't put the label to the right (?)
+p.X.Label.XAlign = draw.XRight // this doesn't put the label to the right
+                               // see https://github.com/go-hep/hep/issues/620
 ```
 
 Axis range
