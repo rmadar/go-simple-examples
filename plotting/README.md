@@ -1,4 +1,8 @@
-## Cheat sheet of go plotting
+# Plotting with go
+
+![Result](h1d_plot.png)
+
+## Cheat sheet
 
 Structure of the plotting tools (WIP):
 ```go
