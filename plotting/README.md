@@ -1,6 +1,6 @@
 # Plotting with go
 
-![Result](h1d_plot.png)
+![Result](h1d_plot_reduced.png)
 
 ## Cheat sheet
 
