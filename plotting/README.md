@@ -43,10 +43,22 @@ p.X.Label.XAlign = draw.XRight // this doesn't put the label to the right
 
 Axis 
 ```go
-p.X.Min, p.X.Max = xmin, xmax            // min & max for x-axis
-p.Y.Min, p.Y.Max = ymin, ymax            // min & max for y-axis
-p.X.Padding, p.Y.Padding = 5, 5          // distance from y=0 for x-axis and x=0 for y-axis
-p.X.Label.Text = "$m_{t\\bar{t}}$ [GeV]" // Label of the x-axis
+p.X.Min, p.X.Max = xmin, xmax       // min & max for x-axis
+p.X.Padding = 5                     // distance from y=0 for x-axis and x=0 for y-axis
+p.X.Label.Text = "X label"          // Label of the x-axis
+p.X.LineStyle.Width = 1.1           // Line width of the axis
+p.X.LineStyle.Color = defaultBlack  // Line color of the axis
+```
+
+Ticks
+```go
+p.X.Tick.LineStyle.Width = 1.1      
+p.X.Tick.LineStyle.Color = defaultBlack
+p.X.Tick.Marker = plot.ConstantTicks([]plot.Tick{
+			plot.Tick{pos1, "label"},
+			plot.Tick{pos2, "label2"}, ...})
+p.X.Tick.Label.Font.Size = 14          // Label (numbers) text style
+p.X.Tick.Label.Color = defaultBlack    // Label (numbers) text style
 ```
 
 Text 
