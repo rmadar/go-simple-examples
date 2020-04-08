@@ -53,7 +53,7 @@ func plotHplot_1D(){
 	
 	// Create a histogram of our data values
 	hData := hplot.NewH1D(histData, hplot.WithYErrBars(true))
-	applyDataHistStyle(hData)
+	applyDataHistStyle(hData) // contains histogram cosmetic
 	p.Add(hData)
 
 	// Create and tune the histogram for simulation prediction
@@ -73,10 +73,8 @@ func plotHplot_1D(){
 	p.Legend.Add("Data", hData)
 	p.Legend.Add("Simulation", hMC)
 	p.Legend.Add("Theory", modelFunc)
-	p.Legend.Top = true
-	p.Legend.Left = false
-	p.Legend.YOffs = 0
-	p.Legend.XOffs = -0.5 * vg.Inch
+	p.Legend.Top, p.Legend.Left = true, false
+	p.Legend.XOffs, p.Legend.YOffs = -0.5 * vg.Inch, 0
 	p.Legend.Padding = 0.1 * vg.Inch
 	p.Legend.ThumbnailWidth = 0.5 * vg.Inch
 
