@@ -54,22 +54,12 @@ func plotHplot_1D(){
 	
 	// Create a histogram of our data values
 	hData := hplot.NewH1D(histData, hplot.WithYErrBars(true))
-	hData.Infos.Style = hplot.HInfoNone
-	hData.LineStyle.Color = color.NRGBA{R: 0, G: 0, B: 0, A: 30}
-	hData.LineStyle.Width = 0
-	hData.YErrs.LineStyle.Color = color.NRGBA{R: 10, G: 10, B: 10, A: 255}
-	hData.YErrs.LineStyle.Width = 2.5
-	hData.YErrs.CapWidth = 8
-	hData.GlyphStyle = draw.GlyphStyle{
-		Shape:  draw.CircleGlyph{},
-		Color:  color.NRGBA{R: 10, G: 10, B: 10, A: 255},
-		Radius: vg.Points(3)}
+	applyDataHistStyle(hData)
 	p.Add(hData)
 
 	// Create and tune the histogram for simulation prediction
 	hMC := hplot.NewH1D(histMC)
 	hMC.Infos.Style = hplot.HInfoNone
-	hMC.LineStyle.Color = color.NRGBA{R: 0, G: 0, B: 0, A: 30}
 	hMC.LineStyle.Width = 0
 	hMC.FillColor = color.NRGBA{R: 0, G: 0, B: 100, A: 30}
 	p.Add(hMC)
@@ -106,8 +96,8 @@ func plotHplot_1D(){
 
 	// Save the plot to a PNG
 	c := vgimg.NewWith(
-		vgimg.UseWH(12*vg.Centimeter, 9*vg.Centimeter),
-		vgimg.UseDPI(200),
+		vgimg.UseWH(14*vg.Centimeter, 9*vg.Centimeter),
+		vgimg.UseDPI(250),
 	)
 	dc := draw.New(c)
 	p.Draw(dc)
@@ -197,13 +187,8 @@ func applyPlotStyle(p *hplot.Plot){
 	p.Y.Tick.Label.Color = defaultBlack
 
 	// Specify tick position
-	// --> this is not good: if, say p.X.Min, is not set before, then it doesn't work.
-	//     In the meanwhile, add a protection.
-	//     Possible attempt with p.DataRanger?
-	if !math.IsInf(p.X.Min, 0) && !math.IsInf(p.Y.Max, 0) {
-		p.X.Tick.Marker = customTicks(p.X.Min, p.X.Max)
-		p.Y.Tick.Marker = customTicks(p.Y.Min, p.Y.Max)
-	}
+	p.X.Tick.Marker = hplot.Ticks{N: 10}
+	p.Y.Tick.Marker = hplot.Ticks{N: 10}
 
 	// Specify text style of the legend
 	p.Legend.TextStyle.Font.Size = 14
@@ -212,6 +197,26 @@ func applyPlotStyle(p *hplot.Plot){
 	// Add a grid if we want
 	// p.Add(newCustomGrid())
 
+}
+
+func applyDataHistStyle(hData *hplot.H1D){
+
+	// Remove basic stat info
+	hData.Infos.Style = hplot.HInfoNone
+	
+	// No line
+	hData.LineStyle.Width = 0
+
+	// Y error bars
+	hData.YErrs.LineStyle.Color = color.NRGBA{R: 10, G: 10, B: 10, A: 255}
+	hData.YErrs.LineStyle.Width = 2.5
+	hData.YErrs.CapWidth = 7
+
+	// Dots as marker
+	hData.GlyphStyle = draw.GlyphStyle{
+		Shape:  draw.CircleGlyph{},
+		Color:  color.NRGBA{R: 10, G: 10, B: 10, A: 255},
+		Radius: vg.Points(3)}
 }
 
 func saveImg(c *vgimg.Canvas, fname string) {
