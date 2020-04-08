@@ -122,6 +122,8 @@ go-hep.org/x/hep v0.25.1-0.20200406145658-e6da6e0d15c8 h1:O8aSjaaUcINYxZKoS/a6sF
 go-hep.org/x/hep v0.25.1-0.20200406145658-e6da6e0d15c8/go.mod h1:AUMfohwyqHC31udG2HbCFSZC3+Q4n4JVIsYx3G94nDw=
 go-hep.org/x/hep v0.25.1-0.20200406174230-73e252674748 h1:0ilSYBQ/yC5QHmkEEitMZzm3akrd0L1PRkKTnZnWTDk=
 go-hep.org/x/hep v0.25.1-0.20200406174230-73e252674748/go.mod h1:AUMfohwyqHC31udG2HbCFSZC3+Q4n4JVIsYx3G94nDw=
+go-hep.org/x/hep v0.25.1-0.20200407184202-682eb6aa4294 h1:Y3Hi3UDWUll3a3/FwxYUMR25p701esjy32v8DxZgxk0=
+go-hep.org/x/hep v0.25.1-0.20200407184202-682eb6aa4294/go.mod h1:bB8/qKT5FTwGsz+9zlBYOQqxxeoGQL8ylN+eQNrywno=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
@@ -140,6 +142,8 @@ golang.org/x/exp v0.0.0-20191030013958-a1ab85dbe136/go.mod h1:JXzH8nQsPlswgeRAPE
 golang.org/x/exp v0.0.0-20191129062945-2f5052295587/go.mod h1:2RIsYlXP63K8oxa1u096TMicItID8zy7Y6sNkU49FU4=
 golang.org/x/exp v0.0.0-20200228211341-fcea875c7e85 h1:jqhIzSw5SQNkbu5hOGpgMHhkfXxrbsLJdkIRcX19gCY=
 golang.org/x/exp v0.0.0-20200228211341-fcea875c7e85/go.mod h1:4M0jN8W1tt0AVLNr8HDosyJCDCDuyL9N9+3m7wDWgKw=
+golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 h1:FR+oGxGfbQu1d+jglI3rCkjAjUnhRSZcUxr+DqlDLNo=
+golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5/go.mod h1:4M0jN8W1tt0AVLNr8HDosyJCDCDuyL9N9+3m7wDWgKw=
 golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
 golang.org/x/image v0.0.0-20190227222117-0694c2d4d067/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.0.0-20190802002840-cff245a6509b/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
@@ -154,6 +158,8 @@ golang.org/x/mobile v0.0.0-20191031020345-0945064e013a/go.mod h1:p895TfNkDgPEmEQ
 golang.org/x/mobile v0.0.0-20191210151939-1a1fef82734d/go.mod h1:p895TfNkDgPEmEQrNiOtIl3j98d/tGU95djDj7NfyjQ=
 golang.org/x/mobile v0.0.0-20200222142934-3c8601c510d0 h1:nZASbxDuz7CO3227BWCCf0MC6ynyvKh6eMDoLcNXAk0=
 golang.org/x/mobile v0.0.0-20200222142934-3c8601c510d0/go.mod h1:skQtrUTUwhdJvXM/2KKJzY8pDgNr9I/FOMqDVRPBUS4=
+golang.org/x/mobile v0.0.0-20200329125638-4c31acba0007 h1:JxsyO7zPDWn1rBZW8FV5RFwCKqYeXnyaS/VQPLpXu6I=
+golang.org/x/mobile v0.0.0-20200329125638-4c31acba0007/go.mod h1:skQtrUTUwhdJvXM/2KKJzY8pDgNr9I/FOMqDVRPBUS4=
 golang.org/x/mod v0.1.0/go.mod h1:0QHyrYULN0/3qlju5TqG8bIK38QM8yzMo5ekMj3DlcY=
 golang.org/x/mod v0.1.1-0.20191105210325-c90efee705ee/go.mod h1:QqPTAvyqsEbceGzBzNggFXnrqF1CaUcvgkdR5Ot7KZg=
 golang.org/x/mod v0.1.1-0.20191107180719-034126e5016b/go.mod h1:QqPTAvyqsEbceGzBzNggFXnrqF1CaUcvgkdR5Ot7KZg=
