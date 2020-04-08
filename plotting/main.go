@@ -5,7 +5,6 @@ import (
 	"log"
 	"math"
 	"image/color"
-	"fmt"
 	"os"
 	
 	"gonum.org/v1/gonum/stat/distuv"
@@ -248,48 +247,6 @@ func newCustomGrid() *plotter.Grid {
 	gr.Horizontal.Color = color.Gray{220}
 	gr.Horizontal.Dashes = []vg.Length{vg.Points(3), vg.Points(5)}
 	return gr
-}
-
-// Functions stolen from David Calvet:
-// https://gitlab.cern.ch/atlas-clermont/tile/front-end/fengo/-/blob/master/PlotHelpers.go
-func customTicks(ymin, ymax float64) plot.ConstantTicks {
-
-	ticks := []plot.Tick{}
-
-	// computing order of range (position of least significant digit)
-	yorder := int(math.Log10(ymax-ymin)+0.5) - 1
-	format := ".0f"
-	if yorder < 1 {
-		format = fmt.Sprintf(".%df", -yorder)
-	}
-
-	// stepping is a power of 10 with integer exponent (yorder)
-	ystep := math.Pow10(yorder)
-
-	// tuning step
-	if (ymax-ymin)/ystep > 20 {
-		ystep *= 5
-	}
-
-	// first big tick is rounded to the correct significant digit
-	yoffset := float64(int(ymin/ystep)) * ystep
-
-	// creating big ticks
-	for y := yoffset; y <= ymax; y += ystep {
-		label := fmt.Sprintf("%"+format, y)
-		ticks = append(ticks, plot.Tick{y, label})
-	}
-
-	// 5 small ticks for each big tick
-	ysub := ystep / 5
-	for y := yoffset - ysub; y >= ymin; y -= ysub {
-		ticks = append(ticks, plot.Tick{y, ""})
-	}
-
-	for y := yoffset + ysub; y <= ymax; y += ysub {
-		ticks = append(ticks, plot.Tick{y, ""})
-	}
-	return plot.ConstantTicks(ticks)
 }
 
 
