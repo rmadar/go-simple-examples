@@ -44,10 +44,10 @@ func plotHplot_1D(){
 	
 	// Make a plot and ask to compile .tex on-the-fly
 	p := hplot.New()
-	p.Title.Text = "\\textbf{APLAS} Dummy -- $\\sqrt{s}=13\\,$TeV $\\mathcal{L}\\,=\\,3\\,$ab\\textsuperscript{-1}"
+	p.Title.Text = `\textbf{APLAS} Dummy -- $\sqrt{s}=13\,$TeV $\mathcal{L}\,=\,3\,$ab\textsuperscript{-1}`
 	p.Latex = hplot.PDFLatexHandler
-	p.X.Label.Text = "$m_{t\\bar{t}}$ [GeV]"
-	p.Y.Label.Text = "$(1/\\sigma) \\: \\mathrm{d}\\sigma / \\mathrm{d}m_{t\\bar{t}}$"
+	p.X.Label.Text = `$m_{t\bar{t}}$ [GeV]`
+	p.Y.Label.Text = `$(1/\sigma) \: \mathrm{d}\sigma / \mathrm{d}m_{t\bar{t}}$`
 	p.X.Min, p.X.Max = -4, 6.0
 	p.Y.Min, p.Y.Max =  0, 0.5
 	applyPlotStyle(p) // contains all plot-related cosmetics
