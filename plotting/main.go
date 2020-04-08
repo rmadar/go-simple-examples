@@ -24,7 +24,7 @@ import (
 )
 
 
-var defaultBlack color.NRGBA = color.NRGBA{R: 30, G: 30, B: 30, A: 255}
+var defaultBlack color.NRGBA = color.NRGBA{R: 35, G: 55, B: 57, A: 255}
 
 func main() {
 
@@ -146,7 +146,7 @@ func getData() (*hbook.H1D, *hbook.H1D, *hplot.Function) {
 // Apply a nice plot style
 func applyPlotStyle(p *hplot.Plot){
 
-	// Plot borders --> doesn't work with LaTeX/PNG with vgimg yet
+	// Plot borders
 	p.Border.Right = 15
 	p.Border.Left = 5
 	p.Border.Top = 10
@@ -190,10 +190,6 @@ func applyPlotStyle(p *hplot.Plot){
 	// Specify text style of the legend
 	p.Legend.TextStyle.Font.Size = 14
 	p.Legend.TextStyle.Color = defaultBlack
-
-	// Add a grid if we want
-	// p.Add(newCustomGrid())
-
 }
 
 func applyDataHistStyle(hData *hplot.H1D){
@@ -205,15 +201,15 @@ func applyDataHistStyle(hData *hplot.H1D){
 	hData.LineStyle.Width = 0
 
 	// Y error bars
-	hData.YErrs.LineStyle.Color = color.NRGBA{R: 10, G: 10, B: 10, A: 255}
-	hData.YErrs.LineStyle.Width = 2.5
-	hData.YErrs.CapWidth = 7
+	hData.YErrs.LineStyle.Color = defaultBlack
+	hData.YErrs.LineStyle.Width = 2
+	hData.YErrs.CapWidth = 6
 
 	// Dots as marker
 	hData.GlyphStyle = draw.GlyphStyle{
 		Shape:  draw.CircleGlyph{},
-		Color:  color.NRGBA{R: 10, G: 10, B: 10, A: 255},
-		Radius: vg.Points(3)}
+		Color:  defaultBlack,
+		Radius: vg.Points(2.5)}
 }
 
 func saveImg(c *vgimg.Canvas, fname string) {
