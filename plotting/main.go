@@ -17,10 +17,10 @@ import (
 	"gonum.org/v1/plot/vg/draw"
 	"gonum.org/v1/plot/vg"
 	"gonum.org/v1/plot/vg/vgimg"
-
 	
 	"go-hep.org/x/hep/hbook"
 	"go-hep.org/x/hep/hplot"
+	"go-hep.org/x/hep/hplot/htex"
 )
 
 
@@ -44,7 +44,7 @@ func plotHplot_1D(){
 	// Make a plot and ask to compile .tex on-the-fly
 	p := hplot.New()
 	p.Title.Text = `\textbf{APLAS} Dummy -- $\sqrt{s}=13\,$TeV $\mathcal{L}\,=\,3\,$ab\textsuperscript{-1}`
-	p.Latex = hplot.PDFLatexHandler
+	p.Latex = htex.DefaultHandler
 	p.X.Label.Text = `$m_{t\bar{t}}$ [GeV]`
 	p.Y.Label.Text = `$(1/\sigma) \: \mathrm{d}\sigma / \mathrm{d}m_{t\bar{t}}$`
 	p.X.Label.Padding = 8
