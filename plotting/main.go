@@ -47,10 +47,12 @@ func plotHplot_1D(){
 	p.Latex = hplot.PDFLatexHandler
 	p.X.Label.Text = `$m_{t\bar{t}}$ [GeV]`
 	p.Y.Label.Text = `$(1/\sigma) \: \mathrm{d}\sigma / \mathrm{d}m_{t\bar{t}}$`
+	p.X.Label.Padding = 8
+	p.Y.Label.Padding = 8
 	p.X.Min, p.X.Max = -4, 6.0
 	p.Y.Min, p.Y.Max =  0, 0.5
 	applyPlotStyle(p) // contains all plot-related cosmetics
-	p.Add(newCustomGrid())
+	//p.Add(newCustomGrid())
 	
 	// Create a histogram of our data values
 	hData := hplot.NewH1D(histData, hplot.WithYErrBars(true))
@@ -154,7 +156,7 @@ func applyPlotStyle(p *hplot.Plot){
 	p.Border.Bottom = 5
 
 	// Specify title style
-	p.Title.TextStyle.Font.Size = 16
+	p.Title.TextStyle.Font.Size = 18
 	p.Title.TextStyle.Color = defaultBlack
 	p.Title.Padding = 10
 
@@ -163,8 +165,8 @@ func applyPlotStyle(p *hplot.Plot){
 	p.Y.Padding = 5
 	
 	// Specify axis label & fontsize
-	p.X.Label.TextStyle.Font.Size = 14
-	p.Y.Label.TextStyle.Font.Size = 14
+	p.X.Label.TextStyle.Font.Size = 18
+	p.Y.Label.TextStyle.Font.Size = 18
 	p.X.Label.TextStyle.Color = defaultBlack
 	p.Y.Label.TextStyle.Color = defaultBlack
 
