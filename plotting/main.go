@@ -50,6 +50,7 @@ func plotHplot_1D(){
 	p.X.Min, p.X.Max = -4, 6.0
 	p.Y.Min, p.Y.Max =  0, 0.5
 	applyPlotStyle(p) // contains all plot-related cosmetics
+	p.Add(newCustomGrid())
 	
 	// Create a histogram of our data values
 	hData := hplot.NewH1D(histData, hplot.WithYErrBars(true))
