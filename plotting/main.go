@@ -24,8 +24,8 @@ import (
 )
 
 
-// var defaultBlack color.NRGBA = color.NRGBA{R: 35, G: 55, B: 57, A: 255}
-var defaultBlack color.NRGBA = color.NRGBA{R: 20, G:40 , B: 47, A: 255}
+// var defaultBlack = color.NRGBA{R: 35, G: 55, B: 57, A: 255}
+var defaultBlack = color.NRGBA{R: 20, G:40 , B: 47, A: 255}
 
 func main() {
 
