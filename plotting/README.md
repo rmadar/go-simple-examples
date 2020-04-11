@@ -39,8 +39,8 @@ Label size and positions
 ```go
 p.Title.TextStyle.Font.Size = 18
 p.X.Label.TextStyle.Font.Size = 18
-p.X.Label.XAlign = draw.XRight // this doesn't put the label to the right
-                               // see https://github.com/go-hep/hep/issues/620
+p.X.Label.Position = draw.PosRight
+p.Y.Label.Position = draw.PosTop
 ```
 
 Axis 
