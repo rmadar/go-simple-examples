@@ -97,7 +97,7 @@ func plotHplot_1D(){
 
 	// Save the plot to a PNG
 	c := vgimg.NewWith(
-		vgimg.UseWH(6*vg.Inch, 6*vg.Inch / 1.618),
+		vgimg.UseWH(6*vg.Inch, 6*vg.Inch / math.Phi),
 		vgimg.UseDPI(250),
 	)
 	dc := draw.New(c)
