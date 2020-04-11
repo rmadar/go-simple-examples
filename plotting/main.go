@@ -24,7 +24,8 @@ import (
 )
 
 
-var defaultBlack color.NRGBA = color.NRGBA{R: 35, G: 55, B: 57, A: 255}
+// var defaultBlack color.NRGBA = color.NRGBA{R: 35, G: 55, B: 57, A: 255}
+var defaultBlack color.NRGBA = color.NRGBA{R: 20, G:40 , B: 47, A: 255}
 
 func main() {
 
@@ -96,7 +97,7 @@ func plotHplot_1D(){
 
 	// Save the plot to a PNG
 	c := vgimg.NewWith(
-		vgimg.UseWH(14*vg.Centimeter, 9*vg.Centimeter),
+		vgimg.UseWH(6*vg.Inch, 1.618 * 6*vg.Inch),
 		vgimg.UseDPI(250),
 	)
 	dc := draw.New(c)
@@ -165,10 +166,14 @@ func applyPlotStyle(p *hplot.Plot){
 	p.Y.Padding = 5
 	
 	// Specify axis label & fontsize
-	p.X.Label.TextStyle.Font.Size = 18
-	p.Y.Label.TextStyle.Font.Size = 18
+	p.X.Label.TextStyle.Font.Size = 16
+	p.Y.Label.TextStyle.Font.Size = 16
 	p.X.Label.TextStyle.Color = defaultBlack
 	p.Y.Label.TextStyle.Color = defaultBlack
+	p.X.Label.Padding = 10
+	p.Y.Label.Padding = 10
+	p.X.Label.Position = draw.PosRight // doesn't work well with LaTeX yet
+	p.Y.Label.Position = draw.PosTop   // doesn't work well with LaTeX yet
 
 	// Specify axis style
 	p.X.LineStyle.Width = 1.05
