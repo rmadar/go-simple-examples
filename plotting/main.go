@@ -172,8 +172,8 @@ func applyPlotStyle(p *hplot.Plot){
 	p.Y.Label.TextStyle.Color = defaultBlack
 	p.X.Label.Padding = 10
 	p.Y.Label.Padding = 10
-	p.X.Label.Position = draw.PosRight // doesn't work well with LaTeX yet
-	p.Y.Label.Position = draw.PosTop   // doesn't work well with LaTeX yet
+	// p.X.Label.Position = draw.PosRight // doesn't work well with LaTeX yet
+	// p.Y.Label.Position = draw.PosTop   // doesn't work well with LaTeX yet
 
 	// Specify axis style
 	p.X.LineStyle.Width = 1.05
