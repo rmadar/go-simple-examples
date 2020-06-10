@@ -20,7 +20,6 @@ import (
 	
 	"go-hep.org/x/hep/hbook"
 	"go-hep.org/x/hep/hplot"
-	"go-hep.org/x/hep/hplot/htex"
 )
 
 
@@ -34,6 +33,67 @@ func main() {
 
 	// Using PlotUtil to get functions
 	createPlotUtil()
+
+	// Bar chart
+	plotBarChart()
+}
+
+
+// Bar plot
+func plotBarChart() {
+	
+	// Get some data.
+	values1 := plotter.Values{0.5, 10, 20, 30}
+	values2 := plotter.Values{30, 20, 10, 0.5}
+	
+	// Bar width
+	w := 1*vg.Centimeter
+	
+	// Create two vertical BarCharts.
+	barChart1, err := plotter.NewBarChart(values1, w) 
+	if err != nil {
+		log.Panic(err)
+	}
+	barChart2, err := plotter.NewBarChart(values2, w)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// Create a third vertical barChart, stack of the two.
+	stack := true
+	if stack {
+		barChart1.StackOn(barChart2) 
+	} else {
+		barChart1.Offset = w
+	}
+
+	// Barchart cosmetics
+	barChart1.Color = color.NRGBA{R: 200, A: 200}
+	barChart1.LineStyle.Width = 0
+	barChart2.Color = color.NRGBA{B: 200, A: 200}
+	barChart2.LineStyle.Width = 0
+	
+	// Create a plot and add the bar chart.
+	p := hplot.New()
+	p.Add(barChart1)
+	p.Add(barChart2)
+	
+	// Add label on the x-axis (which remove the actual axis)
+	//verticalLabels := []string{"A", "B", "C", "D"}
+	//p.NominalX(verticalLabels...)
+
+	// Create a figure
+	f := hplot.Figure(p)
+	f.Border.Right = 15
+	f.Border.Left = 5
+	f.Border.Top = 10
+	f.Border.Bottom = 5
+	f.DPI = 150
+	
+	err = hplot.Save(f, 300, 100, "barChart.png")
+	if err != nil {
+		log.Panic(err)
+	}
 }
 
 // Use hplot package
@@ -45,7 +105,6 @@ func plotHplot_1D(){
 	// Make a plot and ask to compile .tex on-the-fly
 	p := hplot.New()
 	p.Title.Text = `\textbf{APLAS} Dummy -- $\sqrt{s}=13\,$TeV $\mathcal{L}\,=\,3\,$ab\textsuperscript{-1}`
-	p.Latex = htex.DefaultHandler
 	p.X.Label.Text = `$m_{t\bar{t}}$ [GeV]`
 	p.Y.Label.Text = `$(1/\sigma) \: \mathrm{d}\sigma / \mathrm{d}m_{t\bar{t}}$`
 	p.X.Label.Padding = 8
@@ -149,12 +208,6 @@ func getData() (*hbook.H1D, *hbook.H1D, *hplot.Function) {
 
 // Apply a nice plot style
 func applyPlotStyle(p *hplot.Plot){
-
-	// Plot borders
-	p.Border.Right = 15
-	p.Border.Left = 5
-	p.Border.Top = 10
-	p.Border.Bottom = 5
 
 	// Specify title style
 	p.Title.TextStyle.Font.Size = 18
