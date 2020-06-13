@@ -45,10 +45,10 @@ func main() {
 	p.Add(bs)
 
 	// Range
-	p.X.Min = 0
-	p.X.Max = 10
-	p.Y.Min = 0
-	p.Y.Max = 1.2
+	//p.X.Min = 0
+	//p.X.Max = 10
+	//p.Y.Min = 0
+	//p.Y.Max = 1.2
 	
 	// Save the plot
 	if err := p.Save(4*vg.Inch, 4*vg.Inch, "BinnedBars.png"); err != nil {
@@ -91,6 +91,16 @@ func (bs *BinnedBars) Plot(c draw.Canvas, plt *plot.Plot) {
 
 		c.FillPolygon(bs.Color, c.ClipPolygonXY(pts))
 	}
+}
+
+// DataRange implements the DataRange method
+// of the plot.DataRanger interface.
+func (bs *BinnedBars) DataRange() (xmin, xmax, ymin, ymax float64) {
+	catMin := 0. // min(bs.Values)
+	catMax := 1. // max(bs.Values)
+	valMin := bs.Binning[0][0]
+	valMax := bs.Binning[len(bs.Binning)-1][1]
+	return valMin, valMax, catMin, catMax
 }
 
 // Simple binning type
