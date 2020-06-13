@@ -7,6 +7,8 @@ import (
 	"log"
 	"image/color"
 
+	"gonum.org/v1/gonum/floats"
+	
 	"gonum.org/v1/plot/vg"
 	"gonum.org/v1/plot/vg/draw"
 	"gonum.org/v1/plot"
@@ -24,6 +26,9 @@ type BinnedBars struct {
 
 	// Color of bars
 	Color color.Color
+
+	// Minimum Y
+	Ymin float64
 }
 
 // Trying the new plotter
@@ -44,12 +49,6 @@ func main() {
 	p.Y.Label.Text = "Y"
 	p.Add(bs)
 
-	// Range
-	//p.X.Min = 0
-	//p.X.Max = 10
-	//p.Y.Min = 0
-	//p.Y.Max = 1.2
-	
 	// Save the plot
 	if err := p.Save(4*vg.Inch, 4*vg.Inch, "BinnedBars.png"); err != nil {
 		panic(err)
@@ -78,16 +77,16 @@ func (bs *BinnedBars) Plot(c draw.Canvas, plt *plot.Plot) {
 
 	// Loop over values
 	for i, v := range bs.Values {
-
+		ymin := trY(bs.Ymin)
 		xlo := trX(bs.Binning[i][0])
 		xhi := trX(bs.Binning[i][1])
 		val := trY(v)
-
+		
 		var pts []vg.Point
-		pts = append(pts, vg.Point{X: xlo, Y:   0})
+		pts = append(pts, vg.Point{X: xlo, Y: ymin})
 		pts = append(pts, vg.Point{X: xlo, Y: val})
 		pts = append(pts, vg.Point{X: xhi, Y: val})
-		pts = append(pts, vg.Point{X: xhi, Y:   0})
+		pts = append(pts, vg.Point{X: xhi, Y: ymin})
 
 		c.FillPolygon(bs.Color, c.ClipPolygonXY(pts))
 	}
@@ -96,8 +95,8 @@ func (bs *BinnedBars) Plot(c draw.Canvas, plt *plot.Plot) {
 // DataRange implements the DataRange method
 // of the plot.DataRanger interface.
 func (bs *BinnedBars) DataRange() (xmin, xmax, ymin, ymax float64) {
-	catMin := 0. // min(bs.Values)
-	catMax := 1. // max(bs.Values)
+	catMin := bs.Ymin
+	catMax := floats.Max(bs.Values)
 	valMin := bs.Binning[0][0]
 	valMax := bs.Binning[len(bs.Binning)-1][1]
 	return valMin, valMax, catMin, catMax
