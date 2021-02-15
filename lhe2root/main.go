@@ -18,16 +18,18 @@ import (
 
 // Event stucture for partonic ttbar->dilepton event
 type Event struct {
-	t    Particle
-	tbar Particle
-	b    Particle
-	bbar Particle
-	W    Particle
-	Wbar Particle
-	l    Particle
-	lbar Particle
-	v    Particle
-	vbar Particle
+
+	// Initial state
+	i1p, i2p   float64
+	i1id, i2id int32
+	i1h, i2h   float64
+
+	// Final state
+	t, tbar  Particle
+	b, bbar  Particle
+	W, Wbar  Particle
+	l, lbar  Particle
+	v, vbar  Particle
 }
 
 type Particle struct {
@@ -81,7 +83,7 @@ loop:
 	for {
 		
 		// Decode this event, stop if the end of file is reached
-		lhe_evt, err := lhedec.Decode()
+		lheEvt, err := lhedec.Decode()
 		if err != nil {
 			if err == io.EOF {
 				break loop
@@ -92,13 +94,13 @@ loop:
 		// Print the event in verbose mode
 		if *verbose {
 			fmt.Println()
-			fmt.Println(*lhe_evt)
+			fmt.Println(*lheEvt)
 		}
 
 		// Converting the information from LHE event to TTree event
 		var (
-			pids     = lhe_evt.IDUP
-			PxPyPzEM = lhe_evt.PUP
+			pids     = lheEvt.IDUP
+			PxPyPzEM = lheEvt.PUP
 			setPart  = func(part *Particle, P fmom.PxPyPzE, pid int64) {
 				part.pt = float32(P.Pt())
 				part.eta = float32(P.Eta())
@@ -107,9 +109,25 @@ loop:
 				part.pid = int32(pid)
 			}
 		)
-
+		
 		// Loop over particles
 		for i, pid := range pids {
+
+			// Incoming particle 1 & 2
+			if i == 0 {
+				p := get4Vec(PxPyPzEM[i])
+				e.i1p  = p.P()
+				e.i1id = int32(pid)
+				e.i1h  = lheEvt.SPINUP[i]
+			}
+			if i == 1 {
+				p := get4Vec(PxPyPzEM[i])
+				e.i2p  = p.P()
+				e.i2id = int32(pid)
+				e.i2h  = lheEvt.SPINUP[i]
+			}
+
+			// The rest of particles
 			switch int(pid) {
 			case heppdt.PDG_t:
 				setPart(&e.t, get4Vec(PxPyPzEM[i]), pid)
@@ -153,6 +171,14 @@ loop:
 func setBranches(e *Event) []rtree.WriteVar {
 	return []rtree.WriteVar{
 
+		// Incoming particles
+		{Name: "init1_p" , Value: &e.i1p},
+		{Name: "init1_id", Value: &e.i1id},
+		{Name: "init1_h" , Value: &e.i1h},
+		{Name: "init2_p" , Value: &e.i2p},
+		{Name: "init2_id", Value: &e.i2id},
+		{Name: "init2_h" , Value: &e.i2h},
+		
 		// Top
 		{Name: "t_pt", Value: &e.t.pt},
 		{Name: "t_eta", Value: &e.t.eta},
