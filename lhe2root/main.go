@@ -13,8 +13,7 @@ import (
 	"go-hep.org/x/hep/groot/rtree"
 	"go-hep.org/x/hep/heppdt"
 	"go-hep.org/x/hep/lhef"
-
-	"github.com/rmadar/go-lorentz-vector/lv"
+	"go-hep.org/x/hep/fmom"
 )
 
 // Event stucture for partonic ttbar->dilepton event
@@ -100,7 +99,7 @@ loop:
 		var (
 			pids     = lhe_evt.IDUP
 			PxPyPzEM = lhe_evt.PUP
-			setPart  = func(part *Particle, P lv.FourVec, pid int64) {
+			setPart  = func(part *Particle, P fmom.PxPyPzE, pid int64) {
 				part.pt = float32(P.Pt())
 				part.eta = float32(P.Eta())
 				part.phi = float32(P.Phi())
@@ -217,6 +216,6 @@ func setBranches(e *Event) []rtree.WriteVar {
 
 }
 
-func get4Vec(x [5]float64) lv.FourVec {
-	return lv.NewFourVecPxPyPzM(x[0], x[1], x[2], x[4])
+func get4Vec(x [5]float64) fmom.PxPyPzE {
+	return fmom.NewPxPyPzE(x[0], x[1], x[2], x[3])
 }
