@@ -19,8 +19,11 @@ import (
 // Event stucture for partonic ttbar->dilepton event
 type Event struct {
 
+	// Weight
+	w float64
+	
 	// Initial state
-	i1p, i2p   float64
+	i1pz, i2pz float64
 	i1id, i2id int32
 	i1h, i2h   float64
 
@@ -97,6 +100,9 @@ loop:
 			fmt.Println(*lheEvt)
 		}
 
+		// Event weight
+		e.w = lheEvt.XWGTUP
+		
 		// Converting the information from LHE event to TTree event
 		var (
 			pids     = lheEvt.IDUP
@@ -116,13 +122,13 @@ loop:
 			// Incoming particle 1 & 2
 			if i == 0 {
 				p := get4Vec(PxPyPzEM[i])
-				e.i1p  = p.P()
+				e.i1pz = p.Pz()
 				e.i1id = int32(pid)
 				e.i1h  = lheEvt.SPINUP[i]
 			}
 			if i == 1 {
 				p := get4Vec(PxPyPzEM[i])
-				e.i2p  = p.P()
+				e.i2pz = p.Pz()
 				e.i2id = int32(pid)
 				e.i2h  = lheEvt.SPINUP[i]
 			}
@@ -171,13 +177,16 @@ loop:
 func setBranches(e *Event) []rtree.WriteVar {
 	return []rtree.WriteVar{
 
+		// Weight
+		{Name: "w_xec", Value: &e.w},
+		
 		// Incoming particles
-		{Name: "init1_p" , Value: &e.i1p},
+		{Name: "init1_pz", Value: &e.i1pz},
 		{Name: "init1_id", Value: &e.i1id},
-		{Name: "init1_h" , Value: &e.i1h},
-		{Name: "init2_p" , Value: &e.i2p},
+		{Name: "init1_he", Value: &e.i1h},
+		{Name: "init2_pz", Value: &e.i2pz},
 		{Name: "init2_id", Value: &e.i2id},
-		{Name: "init2_h" , Value: &e.i2h},
+		{Name: "init2_he", Value: &e.i2h},
 		
 		// Top
 		{Name: "t_pt", Value: &e.t.pt},
