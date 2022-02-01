@@ -16,19 +16,19 @@ import (
 )
 
 type Event struct {
-	t Particles
-	b Particles
-	W Particles
-	l Particles
-	v Particles
+	t, tbar Particle
+	b, bbar Particle
+	W, Wbar Particle
+	l, lbar Particle
+	v, vbar Particle
 }
 
-type Particles struct {
-	pt  []float32
-	eta []float32
-	phi []float32
-	m   []float32
-	pid []float32
+type Particle struct {
+	pt  float32
+	eta float32
+	phi float32
+	m   float32
+	pid int32
 }
 
 type SpinObservables struct {
@@ -48,7 +48,7 @@ func main() {
 
 	var (
 		fname   = flag.String("f", "ttbar_0j_parton.root", "path to ROOT file to analyze")
-		tname   = flag.String("t", "spinCorrelation", "ROOT Tree name to analyze")
+		tname   = flag.String("t", "truth", "ROOT Tree name to analyze")
 		evtmax  = flag.Int64("n", 10000, "number of events to analyze")
 		verbose = flag.Bool("v", false, "verbose mode")
 	)
@@ -89,13 +89,21 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 		{Name: "kvec"   , Value: &spin_var.kVec},
 		{Name: "rvec"   , Value: &spin_var.rVec},
 		{Name: "nvec"   , Value: &spin_var.nVec},
-		{Name: "dphi_ll", Value: &spin_var.dphi_ll},
 		{Name: "cosO_km", Value: &spin_var.cos_km},
 		{Name: "cosO_kp", Value: &spin_var.cos_kp},
 		{Name: "cosO_rm", Value: &spin_var.cos_rm},
 		{Name: "cosO_rp", Value: &spin_var.cos_rp},
 		{Name: "cosO_nm", Value: &spin_var.cos_nm},
 		{Name: "cosO_np", Value: &spin_var.cos_np},
+		{Name: "dphi_ll", Value: &spin_var.dphi_ll},
+
+		{Name: "t_pt"   , Value: &e.t.pt},
+		{Name: "tbar_pt", Value: &e.tbar.pt},
+		{Name: "t_pid"   , Value: &e.t.pid},
+		{Name: "tbar_pid", Value: &e.tbar.pid},
+		{Name: "l_pid"   , Value: &e.l.pid},
+		{Name: "lbar_pid", Value: &e.lbar.pid},
+
 	}
 	tout, err := rtree.NewWriter(fout, tname, wvars)
 	if err != nil {
@@ -117,36 +125,29 @@ func eventLoop(fname string, tname string, evtmax int64, verbose bool) {
 
 		// Re-computing spin observables
 		var (
-			tops = e.t
-			leptons = e.l
+			top = e.t
+			antitop = e.tbar
+			lep = e.l
+			antilep = e.lbar
 			tplus_P4, tminus_P4 fmom.PxPyPzE
 			lplus_P4, lminus_P4 fmom.PxPyPzE
 		)
 		// Get top/anti-top and lepton/ant-lepton four-vectors
-		get4Vec := func(parts Particles, i int32) fmom.PxPyPzE {
+		get4Vec := func(part Particle) fmom.PxPyPzE {
 			var p fmom.PxPyPzE
 			p.SetPtEtaPhiM(
-				float64(parts.pt[i]),
-				float64(parts.eta[i]),
-				float64(parts.phi[i]),
-				float64(parts.m[i]),
+				float64(part.pt),
+				float64(part.eta),
+				float64(part.phi),
+				float64(part.m),
 			)
 			return p
-		}		
-		if tops.pid[0]>0 {
-			tplus_P4  = get4Vec(tops, 0)
-			tminus_P4 = get4Vec(tops, 1)
-		} else {
-			tplus_P4  = get4Vec(tops, 1)
-			tminus_P4 = get4Vec(tops, 0)
 		}
-		if leptons.pid[0]>0 {
-			lminus_P4 = get4Vec(leptons, 0) 
-			lplus_P4  = get4Vec(leptons, 1) 
-		} else {
-			lminus_P4 = get4Vec(leptons, 1) 
-			lplus_P4  = get4Vec(leptons, 0) 
-		}
+		tplus_P4  = get4Vec(top)
+		tminus_P4 = get4Vec(antitop)
+		lminus_P4 = get4Vec(lep)
+		lplus_P4  = get4Vec(antilep)
+		
 		// Perform the actual computation (spin basis and angles)
 		cosTheta := computeSpinCosines(tplus_P4, tminus_P4, lplus_P4, lminus_P4)
 
@@ -248,62 +249,91 @@ func getSpinBasis(t, tbar fmom.PxPyPzE) (k, r, n r3.Vec) {
 // Helper to define the event variables to load
 func getReadVariables(e *Event) []rtree.ReadVar {
 	return []rtree.ReadVar{
-		// Top-quarks
-		{Name: "t_pt", Value: &e.t.pt},
-		{Name: "t_eta", Value: &e.t.eta},
-		{Name: "t_phi", Value: &e.t.phi},
-		{Name: "t_pid", Value: &e.t.pid},
-		{Name: "t_m", Value: &e.t.m},
+		// Top-quark
+		{Name: "t_pt"    , Value: &e.t.pt},
+		{Name: "t_eta"   , Value: &e.t.eta},
+		{Name: "t_phi"   , Value: &e.t.phi},
+		{Name: "t_pid"   , Value: &e.t.pid},
+		{Name: "t_m"     , Value: &e.t.m},
+		{Name: "tbar_pt" , Value: &e.tbar.pt},
+		{Name: "tbar_eta", Value: &e.tbar.eta},
+		{Name: "tbar_phi", Value: &e.tbar.phi},
+		{Name: "tbar_pid", Value: &e.tbar.pid},
+		{Name: "tbar_m"  , Value: &e.tbar.m},
+
 		// bottom-quarks
-		{Name: "b_pt", Value: &e.b.pt},
-		{Name: "b_eta", Value: &e.b.eta},
-		{Name: "b_phi", Value: &e.b.phi},
-		{Name: "b_pid", Value: &e.b.pid},
-		{Name: "b_m", Value: &e.b.m},
-		// W-boson
-		{Name: "W_pt", Value: &e.W.pt},
-		{Name: "W_eta", Value: &e.W.eta},
-		{Name: "W_phi", Value: &e.W.phi},
-		{Name: "W_pid", Value: &e.W.pid},
-		{Name: "W_m", Value: &e.W.m},
+		{Name: "b_pt"    , Value: &e.b.pt},
+		{Name: "b_eta"   , Value: &e.b.eta},
+		{Name: "b_phi"   , Value: &e.b.phi},
+		{Name: "b_pid"   , Value: &e.b.pid},
+		{Name: "b_m"     , Value: &e.b.m},
+		{Name: "bbar_pt" , Value: &e.bbar.pt},
+		{Name: "bbar_eta", Value: &e.bbar.eta},
+		{Name: "bbar_phi", Value: &e.bbar.phi},
+		{Name: "bbar_pid", Value: &e.bbar.pid},
+		{Name: "bbar_m"  , Value: &e.bbar.m},
+
+		// W-bosons
+		{Name: "W_pt"    , Value: &e.W.pt},
+		{Name: "W_eta"   , Value: &e.W.eta},
+		{Name: "W_phi"   , Value: &e.W.phi},
+		{Name: "W_pid"   , Value: &e.W.pid},
+		{Name: "W_m"     , Value: &e.W.m},
+		{Name: "Wbar_pt" , Value: &e.Wbar.pt},
+		{Name: "Wbar_eta", Value: &e.Wbar.eta},
+		{Name: "Wbar_phi", Value: &e.Wbar.phi},
+		{Name: "Wbar_pid", Value: &e.Wbar.pid},
+		{Name: "Wbar_m"  , Value: &e.Wbar.m},
+		
 		// Charged leptons
-		{Name: "l_pt", Value: &e.l.pt},
-		{Name: "l_eta", Value: &e.l.eta},
-		{Name: "l_phi", Value: &e.l.phi},
-		{Name: "l_pid", Value: &e.l.pid},
-		{Name: "l_m", Value: &e.l.m},
+		{Name: "l_pt"    , Value: &e.l.pt},
+		{Name: "l_eta"   , Value: &e.l.eta},
+		{Name: "l_phi"   , Value: &e.l.phi},
+		{Name: "l_pid"   , Value: &e.l.pid},
+		{Name: "l_m"     , Value: &e.l.m},
+		{Name: "lbar_pt" , Value: &e.lbar.pt},
+		{Name: "lbar_eta", Value: &e.lbar.eta},
+		{Name: "lbar_phi", Value: &e.lbar.phi},
+		{Name: "lbar_pid", Value: &e.lbar.pid},
+		{Name: "lbar_m"  , Value: &e.lbar.m},
+
 		// Neutrinos
-		{Name: "v_pt", Value: &e.v.pt},
-		{Name: "v_eta", Value: &e.v.eta},
-		{Name: "v_phi", Value: &e.v.phi},
-		{Name: "v_pid", Value: &e.v.pid},
-		{Name: "v_m", Value: &e.v.m},
+		{Name: "v_pt"    , Value: &e.v.pt},
+		{Name: "v_eta"   , Value: &e.v.eta},
+		{Name: "v_phi"   , Value: &e.v.phi},
+		{Name: "v_pid"   , Value: &e.v.pid},
+		{Name: "v_m"     , Value: &e.v.m},
+		{Name: "vbar_pt" , Value: &e.vbar.pt},
+		{Name: "vbar_eta", Value: &e.vbar.eta},
+		{Name: "vbar_phi", Value: &e.vbar.phi},
+		{Name: "vbar_pid", Value: &e.vbar.pid},
+		{Name: "vbar_m"  , Value: &e.vbar.m},
 	}
 }
 
 // Event printing
 func printEvent(e Event) {
-	fmt.Println(" * Top quarks")
+	fmt.Println(" * Top quark")
 	fmt.Println("   - pT : ", e.t.pt)
 	fmt.Println("   - Eta: ", e.t.eta)
 	fmt.Println("   - Phi: ", e.t.phi)
 	fmt.Println("   - pid: ", e.t.pid)
-	fmt.Println(" * Bottom quarks")
+	fmt.Println(" * Bottom quark")
 	fmt.Println("   - pT : ", e.b.pt)
 	fmt.Println("   - Eta: ", e.b.eta)
 	fmt.Println("   - Phi: ", e.b.phi)
 	fmt.Println("   - pid: ", e.b.pid)
-	fmt.Println(" * W-bosons")
+	fmt.Println(" * W-boson")
 	fmt.Println("   - pT : ", e.W.pt)
 	fmt.Println("   - Eta: ", e.W.eta)
 	fmt.Println("   - Phi: ", e.W.phi)
 	fmt.Println("   - pid: ", e.W.pid)
-	fmt.Println(" * Leptons")
+	fmt.Println(" * Lepton")
 	fmt.Println("   - pT : ", e.l.pt)
 	fmt.Println("   - Eta: ", e.l.eta)
 	fmt.Println("   - Phi: ", e.l.phi)
 	fmt.Println("   - pid: ", e.l.pid)
-	fmt.Println(" * Neutrinos")
+	fmt.Println(" * Neutrino")
 	fmt.Println("   - pT : ", e.v.pt)
 	fmt.Println("   - Eta: ", e.v.eta)
 	fmt.Println("   - Phi: ", e.v.phi)
