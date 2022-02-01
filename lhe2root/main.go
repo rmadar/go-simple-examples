@@ -148,9 +148,9 @@ loop:
 			case heppdt.PDG_W_minus:
 				setPart(&e.Wbar, get4Vec(PxPyPzEM[i]), pid)
 			case heppdt.PDG_e_plus, heppdt.PDG_mu_plus, heppdt.PDG_tau_plus:
-				setPart(&e.l, get4Vec(PxPyPzEM[i]), pid)
-			case heppdt.PDG_e_minus, heppdt.PDG_mu_minus, heppdt.PDG_tau_minus:
 				setPart(&e.lbar, get4Vec(PxPyPzEM[i]), pid)
+			case heppdt.PDG_e_minus, heppdt.PDG_mu_minus, heppdt.PDG_tau_minus:
+				setPart(&e.l, get4Vec(PxPyPzEM[i]), pid)
 			case heppdt.PDG_nu_e, heppdt.PDG_nu_mu, heppdt.PDG_nu_tau:
 				setPart(&e.v, get4Vec(PxPyPzEM[i]), pid)
 			case heppdt.PDG_anti_nu_e, heppdt.PDG_anti_nu_mu, heppdt.PDG_anti_nu_tau:
